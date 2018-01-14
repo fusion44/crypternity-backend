@@ -2,8 +2,8 @@ from django.db import models
 
 
 class Account(models.Model):
-    SERVICE_TYPE = (('binance', 'Binance'), ('bitfinex', 'Bitfinex'),
-                    ('coinbase', 'Coinbase'), ('kraken', 'Kraken'))
+    SERVICE_TYPES = (('binance', 'Binance'), ('bitfinex', 'Bitfinex'),
+                     ('coinbase', 'Coinbase'), ('kraken', 'Kraken'))
 
     id = models.AutoField(primary_key=True)
 
@@ -16,7 +16,7 @@ class Account(models.Model):
 
     service_type = models.CharField(
         max_length=50,
-        choices=SERVICE_TYPE,
+        choices=SERVICE_TYPES,
     )
 
     api_key = models.CharField(max_length=100)

@@ -54,6 +54,12 @@ def test_resolve_all_accounts():
     assert res.count() == 2, "Should return all accounts"
 
 
+def test_resolve_supported_services():
+    query = schema.Query()
+    res = query.resolve_supported_services(None)
+    assert len(res) > 0, "Should return more than one service"
+
+
 def test_create_account_mutation():
     user = mixer.blend("auth.User")
     mut = schema.CreateAccountMutation()

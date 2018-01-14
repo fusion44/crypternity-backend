@@ -6,6 +6,11 @@ from graphene_django.types import DjangoObjectType
 from backend.accounts.models import Account
 
 
+class SupportedService(graphene.ObjectType):
+    short_name = graphene.String()
+    long_name = graphene.String()
+
+
 class AccountType(DjangoObjectType):
     class Meta:
         model = Account
@@ -32,6 +37,17 @@ class Query(object):
 
     def resolve_all_accounts(self, info, **kwargs):
         return Account.objects.all()
+
+    supported_services = graphene.List(SupportedService)
+
+    def resolve_supported_services(self, info, **kwargs):
+        l = []
+        for val in Account.SERVICE_TYPES:
+            s = SupportedService()
+            s.short_name = val[0]
+            s.long_name = val[1]
+            l.append(s)
+        return l
 
 
 class CreateAccountMutation(graphene.relay.ClientIDMutation):
