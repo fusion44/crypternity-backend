@@ -14,6 +14,6 @@
 
 ### Testing
 
-Currently mixer doesn't support Django 2.0 and will fail all tests. As a workaround apply this change to mixer: https://github.com/klen/mixer/pull/90
-
 Run _pytest --cov-report html --cov_ to run the tests.
+
+Alternatively, run tests and open the results coverage html page with Google Chrome: _pytest --cov-report html --cov && google-chrome-stable ./htmlcov/index.html_
