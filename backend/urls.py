@@ -24,11 +24,12 @@ from rest_framework_jwt.views import refresh_jwt_token
 from rest_framework_jwt.views import verify_jwt_token
 
 import backend.user_profile.views
+from backend.views import GraphQLErrorFormatView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    path('gql/', csrf_exempt(GraphQLView.as_view(batch=True))),
+    path('gql/', csrf_exempt(GraphQLErrorFormatView.as_view(batch=True))),
     path('api-token-auth/', obtain_jwt_token),
     path('api-token-refresh/', refresh_jwt_token),
     path('api-token-verify/', verify_jwt_token),
