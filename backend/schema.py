@@ -1,10 +1,10 @@
 import graphene
 
-import backend.projects.schema
+import backend.accounts.schema
 import backend.user_profile.schema
 
 
-class Query(backend.user_profile.schema.Query, backend.projects.schema.Query,
+class Query(backend.user_profile.schema.Query, backend.accounts.schema.Query,
             graphene.ObjectType):
     # This class will inherit from multiple Queries
     # as we begin to add more apps to our project
@@ -12,7 +12,7 @@ class Query(backend.user_profile.schema.Query, backend.projects.schema.Query,
 
 
 class Mutation(graphene.ObjectType):
-    create_project = backend.projects.schema.CreateProjectMutation.Field()
+    create_account = backend.accounts.schema.CreateAccountMutation.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

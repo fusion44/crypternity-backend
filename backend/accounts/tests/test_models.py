@@ -11,12 +11,12 @@ pytestmark = pytest.mark.django_db
 # https://www.youtube.com/watch?v=41ek3VNx_6Q
 
 
-def test_project_creation():
-    obj = mixer.blend("projects.Project")
-    assert obj.pk > 0, "Should create a Project instance"
+def test_account_creation():
+    obj = mixer.blend("accounts.Account")
+    assert obj.pk > 0, "Should create an Account instance"
 
 
-def test_project_str_func():
+def test_account_str_func():
     name = "test123"
-    obj = mixer.blend("projects.Project", name=name)
-    assert obj.__str__() == name, "Should be the project's name"
+    obj = mixer.blend("accounts.Account", name=name)
+    assert obj.__str__() == name, "Should be the accounts's name"
