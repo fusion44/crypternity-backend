@@ -12,12 +12,11 @@ class Account(models.Model):
         on_delete=models.CASCADE,
     )
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=50)
 
-    service_type = models.CharField(
-        max_length=50,
-        choices=SERVICE_TYPES,
-    )
+    slug = models.SlugField(max_length=50)
+
+    service_type = models.CharField(max_length=50)
 
     api_key = models.CharField(max_length=100)
 

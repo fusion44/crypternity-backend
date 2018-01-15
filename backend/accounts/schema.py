@@ -53,7 +53,9 @@ class Query(object):
 class CreateAccountMutation(graphene.relay.ClientIDMutation):
     class Input:
         name = graphene.String()
-        description = graphene.String()
+        service_type = graphene.String()
+        api_key = graphene.String()
+        api_secret = graphene.String()
 
     status = graphene.Int()
     formErrors = graphene.String()
@@ -61,17 +63,35 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
 
     @classmethod
     def mutate(cls, root, info, input: Input):
-        if not info.user.is_authenticated:
+        if not info.context.user.is_authenticated:
             return CreateAccountMutation(status=403)
         name = input.get("name", "").strip()
-        description = input.get("description", "").strip()
+        service_type = input.get("service_type", "").strip()
+        api_key = input.get("api_key", "").strip()
+        api_secret = input.get("api_secret", "").strip()
 
         # TODO: validate input using django forms or whatnot
-        if not name or not description:
+        if not name or not service_type or not api_key or not api_secret:
             return CreateAccountMutation(
                 status=400,
                 formErrors=json.dumps({
                     "account": ["Please enter valid account data"]
                 }))
-        obj = Account.objects.create(creator=info.user, name=name)
+
+        if Account.objects.filter(name=name).exists():
+            print("exists")
+            return CreateAccountMutation(
+                status=422,
+                formErrors=json.dumps({
+                    "account": ["A account with this name exists"]
+                }))
+
+        obj = Account.objects.create(
+            creator=info.context.user,
+            name=name,
+            slug=name,
+            service_type=service_type,
+            api_key=api_key,
+            api_secret=api_secret)
+
         return CreateAccountMutation(status=200, account=obj)

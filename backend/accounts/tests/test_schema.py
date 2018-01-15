@@ -4,6 +4,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
+from ...test_utils.utils import mock_resolve_info
+
 from .. import schema
 
 # We need to do this so that writing to the DB is possible in our tests.
@@ -61,23 +63,32 @@ def test_resolve_supported_services():
 
 
 def test_create_account_mutation():
-    user = mixer.blend("auth.User")
     mut = schema.CreateAccountMutation()
 
-    data = {"name": "test1", "description": "desc1"}
+    data = {
+        "name": "test1",
+        "service_type": "binance",
+        "api_key": "ateswg",
+        "api_secret": "ssdge"
+    }
 
     req = RequestFactory().get("/")
     # AnonymousUser() is equal to a not logged in user
     req.user = AnonymousUser()
-    res = mut.mutate(None, req, data)
+
+    resolveInfo = mock_resolve_info(req)
+
+    res = mut.mutate(None, resolveInfo, data)
     assert res.status == 403, "Should return 403 if user is not logged in"
 
-    req.user = user
-    res = mut.mutate(None, req, {})
+    req.user = mixer.blend("auth.User")
+    res = mut.mutate(None, resolveInfo, {})
     assert res.status == 400, "Should return 400 if there are form errors"
     assert "account" in res.formErrors, "Should have form error for account in field"
 
-    req.user = user
-    res = mut.mutate(None, req, data)
+    res = mut.mutate(None, resolveInfo, data)
     assert res.status == 200, 'Should return 200 if user is logged in and submits valid data'
     assert res.account.pk == 1, 'Should create new account'
+
+    res = mut.mutate(None, resolveInfo, data)
+    assert res.status == 422, 'Should return 422 if account with this name exists'
