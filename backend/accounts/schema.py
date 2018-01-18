@@ -36,7 +36,10 @@ class Query(object):
     all_accounts = graphene.List(AccountType)
 
     def resolve_all_accounts(self, info, **kwargs):
-        return Account.objects.all()
+        if not info.context.user.is_authenticated:
+            return Account.objects.none()
+        filtered = Account.objects.filter(creator=info.context.user)
+        return filtered
 
     supported_services = graphene.List(SupportedService)
 

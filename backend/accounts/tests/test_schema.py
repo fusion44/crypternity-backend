@@ -49,11 +49,32 @@ def test_resolve_get_account_by_name():
 
 
 def test_resolve_all_accounts():
-    mixer.blend("accounts.Account")
-    mixer.blend("accounts.Account")
+    anonuser = AnonymousUser()
+    usera = mixer.blend("auth.User")
+    userb = mixer.blend("auth.User")
+
+    req = RequestFactory().get("/")
+    req.user = AnonymousUser()
+    resolveInfo = mock_resolve_info(req)
+
+    mixer.blend("accounts.Account", creator=usera)
+    mixer.blend("accounts.Account", creator=usera)
+
+    mixer.blend("accounts.Account", creator=userb)
+    mixer.blend("accounts.Account", creator=userb)
+    mixer.blend("accounts.Account", creator=userb)
+
     query = schema.Query()
-    res = query.resolve_all_accounts(None)
-    assert res.count() == 2, "Should return all accounts"
+    res = query.resolve_all_accounts(resolveInfo)
+    assert res.count() == 0, "User not logged in, should return 0 accounts"
+
+    req.user = usera
+    res = query.resolve_all_accounts(resolveInfo)
+    assert res.count() == 2, "User A is logged in, should return 2 accounts"
+
+    req.user = userb
+    res = query.resolve_all_accounts(resolveInfo)
+    assert res.count() == 3, "User B is logged in, should return 3 accounts"
 
 
 def test_resolve_supported_services():
