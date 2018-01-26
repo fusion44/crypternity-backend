@@ -1,4 +1,5 @@
 import pytest
+import ccxt
 from mixer.backend.django import mixer
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import AnonymousUser
@@ -83,12 +84,32 @@ def test_resolve_supported_services():
     assert len(res) > 0, "Should return more than one service"
 
 
+def test_resolve_supported_symbols():
+    query = schema.Query()
+
+    req = RequestFactory().get("/")
+    req.user = AnonymousUser()
+    resolveInfo = mock_resolve_info(req)
+
+    res = query.resolve_supported_symbols(resolveInfo, **{
+        "service": "binance"
+    })
+    assert len(res) == 0, "User not logged in, should return 0 symbols"
+
+    req.user = mixer.blend("auth.User")
+    res = query.resolve_supported_symbols(resolveInfo, **{
+        "service": "binance"
+    })
+    assert len(res) > 0, "User logged in, should return at least one symbol"
+
+
 def test_create_account_mutation():
     mut = schema.CreateAccountMutation()
 
     data = {
         "name": "test1",
         "service_type": "binance",
+        "symbols": '["ETH/BTC", "XLM/ETH"]',
         "api_key": "ateswg",
         "api_secret": "ssdge"
     }

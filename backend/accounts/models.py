@@ -3,7 +3,8 @@ from django.db import models
 
 class Account(models.Model):
     SERVICE_TYPES = (('binance', 'Binance'), ('bitfinex', 'Bitfinex'),
-                     ('coinbase', 'Coinbase'), ('kraken', 'Kraken'))
+                     ('coinbase', 'Coinbase'), ('cryptopia', 'Cryptopia'),
+                     ('kraken', 'Kraken'))
 
     id = models.AutoField(primary_key=True)
 
@@ -23,6 +24,12 @@ class Account(models.Model):
     api_secret = models.CharField(max_length=100)
 
     creation_date = models.DateTimeField(auto_now_add=True)
+
+    symbols = models.CharField(
+        max_length=1000,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.name

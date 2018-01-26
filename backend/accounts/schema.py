@@ -1,5 +1,6 @@
 import json
 import graphene
+import ccxt
 
 from graphene_django.types import DjangoObjectType
 
@@ -9,6 +10,12 @@ from backend.accounts.models import Account
 class SupportedService(graphene.ObjectType):
     short_name = graphene.String()
     long_name = graphene.String()
+
+
+class SupportedSymbol(graphene.ObjectType):
+    symbol = graphene.String()
+    base = graphene.String()
+    quote = graphene.String()
 
 
 class AccountType(DjangoObjectType):
@@ -52,11 +59,39 @@ class Query(object):
             l.append(s)
         return l
 
+    supported_symbols = graphene.List(
+        SupportedSymbol, service=graphene.String(required=True))
+
+    def resolve_supported_symbols(self, info, **kwargs):
+        l = []
+        if not info.context.user.is_authenticated:
+            return l
+
+        service_id = kwargs.get('service')
+        try:
+            exchange = getattr(ccxt, service_id)()
+            markets = exchange.load_markets()
+            for m in markets:
+                market = markets[m]
+                if market:
+                    s = SupportedSymbol()
+                    s.symbol = market["symbol"]
+                    s.base = market["base"]
+                    s.quote = market["quote"]
+                    l.append(s)
+        except AttributeError:
+            # coinbase will land here
+            # it is not supported by ccxt and will receive special treatment
+            pass
+
+        return l
+
 
 class CreateAccountMutation(graphene.relay.ClientIDMutation):
     class Input:
         name = graphene.String()
         service_type = graphene.String()
+        symbols = graphene.String()
         api_key = graphene.String()
         api_secret = graphene.String()
 
@@ -70,6 +105,7 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
             return CreateAccountMutation(status=403)
         name = input.get("name", "").strip()
         service_type = input.get("service_type", "").strip()
+        symbols = input.get("symbols", "").strip()
         api_key = input.get("api_key", "").strip()
         api_secret = input.get("api_secret", "").strip()
 
@@ -94,6 +130,7 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
             name=name,
             slug=name,
             service_type=service_type,
+            symbols=symbols,
             api_key=api_key,
             api_secret=api_secret)
 
