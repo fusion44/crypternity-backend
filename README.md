@@ -12,8 +12,25 @@
 * _./manage.py makemigrations_
 * _./manage.py migrate_
 
+#### Debugging using VS code
+
+* Install the Visual Studio code [Python extension](https://code.visualstudio.com/docs/languages/python)
+* Open workspace settings and set the appropriate python path for the virtual env
+
+```json
+{
+  "python.pythonPath": "/home/fusion44/.virtualenvs/crypternity/bin/python3.6"
+}
+```
+
+* Select _Python: Django_ as DEBUG configuration
+
 ### Testing
 
 Run _pytest --cov-report html --cov_ to run the tests.
 
 Alternatively, run tests and open the results coverage html page with Google Chrome: _pytest --cov-report html --cov && google-chrome-stable ./htmlcov/index.html_
+
+```
+
+```
