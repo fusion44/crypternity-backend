@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'backend.accounts',
+    'backend.transactions',
     'backend.user_profile',
     'graphene_django',
 ]

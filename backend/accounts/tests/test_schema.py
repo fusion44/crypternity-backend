@@ -134,3 +134,55 @@ def test_create_account_mutation():
 
     res = mut.mutate(None, resolveInfo, data)
     assert res.status == 422, 'Should return 422 if account with this name exists'
+
+
+def test_refresh_transactions_mutation(monkeypatch):
+    # 1 Should not be able to to trigger mutation when unauthenticated (status 403)
+    # 2 Should not be able to update other users accounts (status 403)
+    # 3 Should return error message when no id or wrong data type was supplied (status 400)
+    # 4 Should return success message when update was successfuly started (status 200)
+
+    usera = mixer.blend("auth.User")
+    userb = mixer.blend("auth.User")
+
+    mixer.blend("accounts.Account", creator=usera)  # id 1
+    mixer.blend("accounts.Account", creator=userb)  # id 2
+
+    mut = schema.AccountRefreshTransactionsMutation()
+    req = RequestFactory().get("/")
+    req.user = AnonymousUser()
+    resolveInfo = mock_resolve_info(req)
+
+    data = {"account_id": "1"}
+    res = mut.mutate(None, resolveInfo, data)
+    assert res.status == 403, 'Should not be able to to trigger mutation when unauthenticated (status 403)'
+
+    req.user = userb
+    res = mut.mutate(None, resolveInfo, data)
+    assert res.status == 403, 'Should not be able to update other users accounts (status 403)'
+
+    res = mut.mutate(None, resolveInfo, {})
+    assert res.status == 400, 'Should return error status when supplied no input at all'
+
+    data = {"account_id": "a"}
+    res = mut.mutate(None, resolveInfo, data)
+    assert res.status == 400, 'Should return error status when supplied incorrect input'
+
+    data = {"account_id": "-1"}
+    res = mut.mutate(None, resolveInfo, data)
+    assert res.status == 400, 'Should return error status when supplied incorrect input'
+
+    # TODO: Find reason why this won't work
+    #
+    ## This prints True:
+    # print(
+    #     hasattr(backend.transactions.fetchers.generic_exchange,
+    #             "update_exchange_tx_generic"))
+    #
+    ## but the Lambda is never used
+    #monkeypatch.setattr(backend.transactions.fetchers.generic_exchange,
+    #                    "update_exchange_tx_generic",
+    #                    new_update_exchange_tx_generic)
+    #req.user = usera
+    #res = mut.mutate(None, resolveInfo, data)
+    #assert res.status == 200, 'Should return success message when update was successfuly started (status 200)'

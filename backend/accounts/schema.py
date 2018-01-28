@@ -5,6 +5,7 @@ import ccxt
 from graphene_django.types import DjangoObjectType
 
 from backend.accounts.models import Account
+from backend.transactions.fetchers.generic_exchange import update_exchange_tx_generic
 
 
 class SupportedService(graphene.ObjectType):
@@ -135,3 +136,37 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
             api_secret=api_secret)
 
         return CreateAccountMutation(status=200, account=obj)
+
+
+class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
+    class Input:
+        account_id = graphene.String()
+
+    status = graphene.Int()
+    formErrors = graphene.String()
+    msg = graphene.String()
+
+    @classmethod
+    def mutate(cls, root, info, input) -> "AccountRefreshTransactionsMutation":
+        if not info.context.user.is_authenticated:
+            return AccountRefreshTransactionsMutation(status=403)
+
+        if input.get("account_id", -1) == -1:
+            return AccountRefreshTransactionsMutation(status=400)
+
+        account_id = input.get("account_id", -1).strip()
+
+        try:
+            id_int = int(account_id)
+            if id_int < 0:
+                raise ValueError("Invalid input")
+        except ValueError as err:
+            return AccountRefreshTransactionsMutation(status=400)
+
+        account: Account = Account.objects.get(pk=account_id)
+
+        if account.creator != info.context.user:
+            return AccountRefreshTransactionsMutation(status=403)
+
+        update_exchange_tx_generic(account)
+        return AccountRefreshTransactionsMutation(msg="Working", status=200)
