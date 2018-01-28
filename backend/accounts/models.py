@@ -8,7 +8,7 @@ class Account(models.Model):
 
     id = models.AutoField(primary_key=True)
 
-    creator = models.ForeignKey(
+    owner = models.ForeignKey(
         'auth.user',
         on_delete=models.CASCADE,
     )

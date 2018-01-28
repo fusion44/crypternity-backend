@@ -46,7 +46,7 @@ class Query(object):
     def resolve_all_accounts(self, info, **kwargs):
         if not info.context.user.is_authenticated:
             return Account.objects.none()
-        filtered = Account.objects.filter(creator=info.context.user)
+        filtered = Account.objects.filter(owner=info.context.user)
         return filtered
 
     supported_services = graphene.List(SupportedService)
@@ -127,7 +127,7 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
                 }))
 
         obj = Account.objects.create(
-            creator=info.context.user,
+            owner=info.context.user,
             name=name,
             slug=name,
             service_type=service_type,
@@ -165,7 +165,7 @@ class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
 
         account: Account = Account.objects.get(pk=account_id)
 
-        if account.creator != info.context.user:
+        if account.owner != info.context.user:
             return AccountRefreshTransactionsMutation(status=403)
 
         update_exchange_tx_generic(account)

@@ -73,7 +73,7 @@ def update_exchange_tx_generic(account: Account):
             t.fee_currency = trade["fee"]["currency"]
 
             t.date = trade["datetime"]
-            t.owner = account.creator
+            t.owner = account.owner
             t.source_account = account
             t.target_account = account
 

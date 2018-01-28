@@ -58,12 +58,12 @@ def test_resolve_all_accounts():
     req.user = AnonymousUser()
     resolveInfo = mock_resolve_info(req)
 
-    mixer.blend("accounts.Account", creator=usera)
-    mixer.blend("accounts.Account", creator=usera)
+    mixer.blend("accounts.Account", owner=usera)
+    mixer.blend("accounts.Account", owner=usera)
 
-    mixer.blend("accounts.Account", creator=userb)
-    mixer.blend("accounts.Account", creator=userb)
-    mixer.blend("accounts.Account", creator=userb)
+    mixer.blend("accounts.Account", owner=userb)
+    mixer.blend("accounts.Account", owner=userb)
+    mixer.blend("accounts.Account", owner=userb)
 
     query = schema.Query()
     res = query.resolve_all_accounts(resolveInfo)
@@ -145,8 +145,8 @@ def test_refresh_transactions_mutation(monkeypatch):
     usera = mixer.blend("auth.User")
     userb = mixer.blend("auth.User")
 
-    mixer.blend("accounts.Account", creator=usera)  # id 1
-    mixer.blend("accounts.Account", creator=userb)  # id 2
+    mixer.blend("accounts.Account", owner=usera)  # id 1
+    mixer.blend("accounts.Account", owner=userb)  # id 2
 
     mut = schema.AccountRefreshTransactionsMutation()
     req = RequestFactory().get("/")

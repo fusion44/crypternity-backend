@@ -137,9 +137,9 @@ def new_fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
 def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
     user = mixer.blend("auth.User")
     account_bin: Account = mixer.blend(
-        "accounts.Account", creator=user, service_type="binance")
+        "accounts.Account", owner=user, service_type="binance")
     account_crypt: Account = mixer.blend(
-        "accounts.Account", creator=user, service_type="cryptopia")
+        "accounts.Account", owner=user, service_type="cryptopia")
 
     monkeypatch.setattr(ccxt.binance, "load_markets", new_load_markets)
     monkeypatch.setattr(ccxt.binance, "fetch_my_trades", new_fetch_my_trades)
