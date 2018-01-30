@@ -1,11 +1,13 @@
 import json
 import graphene
 import ccxt
+import celery
 
 from graphene_django.types import DjangoObjectType
 
 from backend.accounts.models import Account
-from backend.transactions.fetchers.generic_exchange import update_exchange_tx_generic
+
+from backend.accounts.tasks import async_update_exchange_tx_generic
 
 
 class SupportedService(graphene.ObjectType):
@@ -168,5 +170,20 @@ class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
         if account.owner != info.context.user:
             return AccountRefreshTransactionsMutation(status=403)
 
-        update_exchange_tx_generic(account)
+        tid = account_id + account.name
+        # celery.result will only be available until after the task has run once
+        if not hasattr(celery, "result") or celery.result.AsyncResult(
+                tid).status == "SUCCESS":
+            try:
+                print("starting task")
+                async_update_exchange_tx_generic.apply_async(
+                    args=[account_id], task_id=tid)
+            except async_update_exchange_tx_generic.OperationalError as err:
+                print("Sending task raised: %r", err)
+                return AccountRefreshTransactionsMutation(status=500)
+        else:
+            print("skipping task")
+            return AccountRefreshTransactionsMutation(
+                msg="Task is already running", status=202)
+
         return AccountRefreshTransactionsMutation(msg="Working", status=200)

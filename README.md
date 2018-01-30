@@ -12,6 +12,28 @@
 * _./manage.py makemigrations_
 * _./manage.py migrate_
 
+#### RabbitMQ
+
+A RabbitMQ server or a Redis instance for [Celery](http://www.celeryproject.org/) is necessary. Easiest way to run RabbitMQ is using a Raspberry Pi with [HypriotOS](https://blog.hypriot.com/downloads/). Hypriot comes with everything necessary to run the necessary Docker Images:
+
+On the RPi:
+
+* mkdir rabbitmqdata && mkdir rabbitmqlogs
+* _docker pull ronnyroos/rpi-rabbitmq_
+* _docker run --restart=unless-stopped -d -p 5672:5672 -p 15672:15672 -v /home/pirate/rabbitmqlogs:/data/log -v /home/pirate/rabbitmqdata:/data/mnesia ronnyroos/rpi-rabbitmq_
+
+On the dev machine, open backend/settings.py and find the following line:
+
+```python
+CELERY_BROKER_URL = 'amqp://192.168.178.108//'
+```
+
+Replace the ip with your server ip
+
+Finally, run Celery:
+
+* _celery worker -A backend --loglevel=debug --concurrency=4_
+
 #### Debugging using VS code
 
 * Install the Visual Studio code [Python extension](https://code.visualstudio.com/docs/languages/python)
