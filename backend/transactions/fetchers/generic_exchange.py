@@ -49,7 +49,7 @@ def update_exchange_tx_generic(account: Account):
     else:
         trades = fetch_trades_unbatched(exchange)
 
-    if (len(trades) > 0):
+    if trades:
         for trade in trades:
             # print(trade["symbol"] + " " + trade["datetime"])
 
@@ -118,4 +118,4 @@ def update_exchange_tx_generic(account: Account):
 
             transactions.append(t)
             time.sleep(0.2)  # avoid hammering the API's
-    Transaction.objects.bulk_create(transactions)
+        Transaction.objects.bulk_create(transactions)
