@@ -47,3 +47,20 @@ class Transaction(models.Model):
             float(self.spent_amount), self.spent_currency,
             float(self.aquired_amount), self.aquired_currency,
             float(self.book_price_eur))
+
+
+class TransactionUpdateHistoryEntry(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    date = models.DateTimeField()
+
+    account = models.ForeignKey(
+        to='accounts.Account',
+        on_delete=models.PROTECT,
+    )
+
+    fetched_transactions = models.IntegerField()
+
+    def __str__(self):
+        return "{} {} {}".format(self.account.id, self.date,
+                                 self.fetched_transactions)

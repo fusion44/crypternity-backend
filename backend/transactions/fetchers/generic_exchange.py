@@ -1,13 +1,16 @@
 import ccxt
 import time
-import datetime
+from datetime import datetime, timezone
+from django.utils.timezone import now
 from requests.exceptions import ReadTimeout
 from dateutil import parser
+from django.db.models import QuerySet
 
 import cryptocompare
 
 from backend.accounts.models import Account
 from backend.transactions.models import Transaction
+from backend.transactions.models import TransactionUpdateHistoryEntry
 
 from ...utils.utils import exchange_can_batch
 
@@ -31,6 +34,7 @@ def fetch_trades_unbatched(exchange: ccxt.Exchange):
 
 def update_exchange_tx_generic(account: Account):
     exchange: ccxt.Exchange = None
+    starttime: datetime = now()
 
     if hasattr(ccxt, account.service_type):
         exchange: ccxt.Exchange = getattr(ccxt, account.service_type)({
@@ -42,6 +46,13 @@ def update_exchange_tx_generic(account: Account):
     else:
         print("nope")
 
+    last_update_query: QuerySet = TransactionUpdateHistoryEntry.objects.filter(
+        account=account).order_by('-date')
+    latest_update = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
+
+    if last_update_query.count():
+        latest_update = last_update_query[:1][0].date
+
     transactions = []
     trades = []
     if exchange_can_batch(account.service_type):
@@ -52,6 +63,11 @@ def update_exchange_tx_generic(account: Account):
     if trades:
         for trade in trades:
             # print(trade["symbol"] + " " + trade["datetime"])
+
+            trade_date = parser.parse(trade["datetime"])
+            if trade_date <= latest_update:
+                print("skiping ", trade["symbol"] + " " + trade["datetime"])
+                continue
 
             split = trade["symbol"].split("/")
 
@@ -119,3 +135,8 @@ def update_exchange_tx_generic(account: Account):
             transactions.append(t)
             time.sleep(0.2)  # avoid hammering the API's
         Transaction.objects.bulk_create(transactions)
+    entry: TransactionUpdateHistoryEntry = TransactionUpdateHistoryEntry(
+        date=starttime,
+        account=account,
+        fetched_transactions=len(transactions))
+    entry.save()

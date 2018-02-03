@@ -1,5 +1,7 @@
 import pytest
 import time
+from datetime import datetime, timedelta
+from django.utils.timezone import now
 from _pytest.monkeypatch import MonkeyPatch
 from mixer.backend.django import mixer
 from django.core.exceptions import ObjectDoesNotExist
@@ -8,6 +10,7 @@ import cryptocompare
 
 from backend.accounts.models import Account
 from backend.transactions.models import Transaction
+from backend.transactions.models import TransactionUpdateHistoryEntry
 
 from ..fetchers.generic_exchange import update_exchange_tx_generic
 
@@ -134,6 +137,16 @@ def new_fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
         return ret_binance
 
 
+@pytest.fixture
+def patch_ccxt(monkeypatch: MonkeyPatch):
+    monkeypatch.setattr(ccxt.binance, "load_markets", new_load_markets)
+    monkeypatch.setattr(ccxt.binance, "fetch_my_trades", new_fetch_my_trades)
+    monkeypatch.setattr(ccxt.cryptopia, "load_markets", new_load_markets)
+    monkeypatch.setattr(ccxt.cryptopia, "fetch_my_trades", new_fetch_my_trades)
+    monkeypatch.setattr(cryptocompare, "get_historical_price",
+                        new_get_historical_price)
+
+
 def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
     user = mixer.blend("auth.User")
     account_bin: Account = mixer.blend(
@@ -141,12 +154,7 @@ def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
     account_crypt: Account = mixer.blend(
         "accounts.Account", owner=user, service_type="cryptopia")
 
-    monkeypatch.setattr(ccxt.binance, "load_markets", new_load_markets)
-    monkeypatch.setattr(ccxt.binance, "fetch_my_trades", new_fetch_my_trades)
-    monkeypatch.setattr(ccxt.cryptopia, "load_markets", new_load_markets)
-    monkeypatch.setattr(ccxt.cryptopia, "fetch_my_trades", new_fetch_my_trades)
-    monkeypatch.setattr(cryptocompare, "get_historical_price",
-                        new_get_historical_price)
+    patch_ccxt(monkeypatch)
 
     update_exchange_tx_generic(account_bin)
     update_exchange_tx_generic(account_crypt)
@@ -161,3 +169,67 @@ def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
     assert float(t.spent_amount) == BINANCE_AMOUNT
     assert float(t.aquired_amount) == BINANCE_COST
     assert float(t.book_price_eur) == BINANCE_BOOK_PRICE_EUR
+
+    update_entry = TransactionUpdateHistoryEntry.objects.get(
+        account=account_bin)
+    assert update_entry.fetched_transactions == 3
+    update_entry = TransactionUpdateHistoryEntry.objects.get(
+        account=account_crypt)
+    assert update_entry.fetched_transactions == 4
+
+
+def test_update_exchange_tx_generic_transaction_history(
+        monkeypatch: MonkeyPatch):
+    """  Test, that the update function does not import  """
+    user = mixer.blend("auth.User")
+    account_bin: Account = mixer.blend(
+        "accounts.Account", owner=user, service_type="binance")
+
+    patch_ccxt(monkeypatch)
+
+    date: datetime = now()
+
+    mixer.blend(
+        "transactions.TransactionUpdateHistoryEntry",
+        date=date,
+        account=account_bin,
+        fetched_transactions=3)
+
+    monkeypatch.setattr(
+        ccxt.binance, "fetch_my_trades",
+        lambda self, symbol=None, since=None, limit=None, params={}:
+        [
+            {
+                'amount': 0.3,
+                'cost': 0.00032,
+                'datetime': str(date + timedelta(days=-1)),  # Should be discarded
+                'fee': {
+                    'cost': 0.00044,
+                    'currency': 'BNB'
+                },
+                'id': '4',
+                'price': 0.1,
+                'side': 'sell',
+                'symbol': 'BTC/ETH',
+                'timestamp': 1515564209213,
+            },
+            {
+                'amount': BINANCE_AMOUNT,
+                'cost': BINANCE_COST,
+                'datetime': str(date + timedelta(days=1)),
+                'fee': {
+                    'cost': 0.011,
+                    'currency': 'BNB'
+                },
+                'id': '5',
+                'price': BINANCE_PRICE,
+                'side': 'sell',
+                'symbol': 'LTC/BTC',
+                'timestamp': 1514453212249,
+            }
+        ])
+
+    update_exchange_tx_generic(account_bin)
+    transaction = Transaction.objects.filter(target_account=account_bin)
+    assert transaction.count(
+    ) == 1, "Should not import transactions older than last update time"
