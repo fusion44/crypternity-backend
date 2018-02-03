@@ -172,8 +172,12 @@ class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
 
         tid = account_id + account.name
         # celery.result will only be available until after the task has run once
-        if not hasattr(celery, "result") or celery.result.AsyncResult(
-                tid).status == "SUCCESS":
+        if hasattr(celery, "result") and celery.result.AsyncResult(
+                tid).status == "RUNNING":
+            print("skipping task")
+            return AccountRefreshTransactionsMutation(
+                msg="Task is already running", status=202)
+        else:
             try:
                 print("starting task")
                 async_update_exchange_tx_generic.apply_async(
@@ -181,9 +185,5 @@ class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
             except async_update_exchange_tx_generic.OperationalError as err:
                 print("Sending task raised: %r", err)
                 return AccountRefreshTransactionsMutation(status=500)
-        else:
-            print("skipping task")
-            return AccountRefreshTransactionsMutation(
-                msg="Task is already running", status=202)
 
         return AccountRefreshTransactionsMutation(msg="Working", status=200)
