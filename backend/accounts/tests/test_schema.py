@@ -7,6 +7,7 @@ from django.test import RequestFactory
 
 from ...test_utils.utils import mock_resolve_info
 
+from ..models import Account
 from .. import schema
 
 # We need to do this so that writing to the DB is possible in our tests.
@@ -134,6 +135,80 @@ def test_create_account_mutation():
 
     res = mut.mutate(None, resolveInfo, data)
     assert res.status == 422, 'Should return 422 if account with this name exists'
+
+
+def test_edit_account_mutation():
+    # 1 Should not be able to to edit accounts when unauthenticated (status 403)
+    # 2 Should not be able to edit other users accounts (status 403)
+    # 3 Should return error message when no id or wrong data type was supplied (status 400)
+    # 4 Should return success message when update was successfuly started (status 200)
+    mut = schema.EditAccountMutation()
+
+    anonuser = AnonymousUser()
+    usera = mixer.blend("auth.User")
+    userb = mixer.blend("auth.User")
+
+    req = RequestFactory().get("/")
+    req.user = AnonymousUser()
+    resolve_info = mock_resolve_info(req)
+    name_initial = "test1"
+    name_updated = "test2"
+
+    account: Account = mixer.blend(
+        "accounts.Account",
+        owner=usera,
+        name=name_initial,
+        service_type="binance",
+        symbols='["ETH/BTC", "XLM/ETH"]',
+        api_key="ateswg",
+        api_secret="ssdge")
+
+    data = {
+        "account_id": account.pk,
+        "name": name_updated,
+        "api_key": "1234",
+        "api_secret": "5678"
+    }
+
+    req = RequestFactory().get("/")
+    # AnonymousUser() is equal to a not logged in user
+    req.user = AnonymousUser()
+
+    resolve_info = mock_resolve_info(req)
+
+    res = mut.mutate(None, resolve_info, data)
+    account: Account = Account.objects.get(pk=account.pk)
+    assert account.name == name_initial, "Should not have edited name"
+    assert res.status == 403, "Should return 403 if user is not logged in"
+
+    req.user = userb
+    res = mut.mutate(None, resolve_info, data)
+    account: Account = Account.objects.get(pk=account.pk)
+    assert account.name == name_initial, "Should not have edited name"
+    assert res.status == 403, "Should return 403 if user is trying to modify another users account"
+
+    req.user = usera
+    res = mut.mutate(
+        None, resolve_info, {
+            "account_id": 5,
+            "name": name_updated,
+            "api_key": "1234",
+            "api_secret": "5678"
+        })
+    assert res.status == 422, "Should return 422 if account does not exist"
+
+    res = mut.mutate(None, resolve_info, {})
+    account: Account = Account.objects.get(pk=account.pk)
+    assert account.name == name_initial, "Should not have edited name"
+    assert res.status == 400, "Should return 400 if there are form errors"
+    assert "account" in res.formErrors, "Should have form error for account in field"
+
+    res = mut.mutate(None, resolve_info, data)
+    assert res.status == 200, 'Should return 200 if user is logged in and submits valid data'
+    assert res.account.name == name_updated, 'Name should match'
+    assert res.account.api_key == data["api_key"], 'API Key should match'
+    assert res.account.api_secret == data[
+        "api_secret"], 'API secret should match'
 
 
 def test_refresh_transactions_mutation(monkeypatch):

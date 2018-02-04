@@ -14,6 +14,7 @@ class Query(backend.user_profile.schema.Query, backend.accounts.schema.Query,
 
 class Mutation(graphene.ObjectType):
     create_account = backend.accounts.schema.CreateAccountMutation.Field()
+    edit_account = backend.accounts.schema.EditAccountMutation.Field()
     account_refresh_transactions = backend.accounts.schema.AccountRefreshTransactionsMutation.Field(
     )
 

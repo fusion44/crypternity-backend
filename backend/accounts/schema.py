@@ -2,6 +2,7 @@ import json
 import graphene
 import ccxt
 import celery
+from django.db.models import ObjectDoesNotExist
 
 from graphene_django.types import DjangoObjectType
 
@@ -138,6 +139,62 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
             api_secret=api_secret)
 
         return CreateAccountMutation(status=200, account=obj)
+
+
+class EditAccountMutation(graphene.relay.ClientIDMutation):
+    class Input:
+        account_id = graphene.Int()
+        name = graphene.String()
+        api_key = graphene.String()
+        api_secret = graphene.String()
+
+    status = graphene.Int()
+    formErrors = graphene.String()
+    account = graphene.Field(AccountType)
+
+    @classmethod
+    def mutate(cls, root, info, input: Input):
+        if not info.context.user.is_authenticated:
+            return EditAccountMutation(status=403)
+
+        account_id = input.get("account_id", -1)
+        name = input.get("name", "").strip()
+        api_key = input.get("api_key", "").strip()
+        api_secret = input.get("api_secret", "").strip()
+
+        # TODO: validate input using django forms or whatnot
+        if account_id < 0 or not name or not api_key or not api_secret:
+            return EditAccountMutation(
+                status=400,
+                formErrors=json.dumps({
+                    "account": ["Please enter valid account data"]
+                }))
+
+        try:
+            account: Account = Account.objects.get(pk=account_id)
+        except ObjectDoesNotExist:
+            return EditAccountMutation(
+                status=422,
+                formErrors=json.dumps({
+                    "account": ["Account does not exists"]
+                }))
+
+        if account.owner != info.context.user:
+            return EditAccountMutation(status=403)
+
+        if not account:
+            return EditAccountMutation(
+                status=422,
+                formErrors=json.dumps({
+                    "account": ["This account does not exist"]
+                }))
+
+        account.name = name
+        account.api_key = api_key
+        account.api_secret = api_secret
+        account.save()
+
+        return EditAccountMutation(status=200, account=account)
 
 
 class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
