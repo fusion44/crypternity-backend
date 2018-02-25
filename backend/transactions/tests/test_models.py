@@ -24,8 +24,8 @@ def test_transaction_str_func():
         "transactions.Transaction",
         spent_amount=50.0000,
         spent_currency="BTC",
-        aquired_amount=150.0100,
-        aquired_currency="ETH",
+        acquired_amount=150.0100,
+        acquired_currency="ETH",
         book_price_eur=300)
 
     assert t.__str__() == name, "Should be the transaction's name"

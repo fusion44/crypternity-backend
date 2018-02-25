@@ -1,10 +1,10 @@
-import pytest
+"""Contains all tests for the generic exchange fetcher"""
 import time
 from datetime import datetime, timedelta
+import pytest
 from django.utils.timezone import now
 from _pytest.monkeypatch import MonkeyPatch
 from mixer.backend.django import mixer
-from django.core.exceptions import ObjectDoesNotExist
 import ccxt
 import cryptocompare
 
@@ -131,7 +131,7 @@ def new_fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
         'timestamp': 1514233533460,
     }]
 
-    if symbol == None:
+    if symbol is None:
         return ret_cryptopia
     else:
         return ret_binance
@@ -167,7 +167,7 @@ def test_update_exchange_trx_generic_binance(monkeypatch: MonkeyPatch):
 
     t: Transaction = Transaction.objects.get(pk=BINANCE_CHECK_TRANSACTION_ID)
     assert float(t.spent_amount) == BINANCE_AMOUNT
-    assert float(t.aquired_amount) == BINANCE_COST
+    assert float(t.acquired_amount) == BINANCE_COST
     assert float(t.book_price_eur) == BINANCE_BOOK_PRICE_EUR
 
     update_entry = TransactionUpdateHistoryEntry.objects.get(

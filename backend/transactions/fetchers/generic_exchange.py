@@ -1,3 +1,8 @@
+"""
+Contains all functions related to importing transactions
+from exchanges supported by the ccxt library
+"""
+
 import ccxt
 import time
 from datetime import datetime, timezone
@@ -14,10 +19,14 @@ from backend.transactions.models import TransactionUpdateHistoryEntry
 
 from ...utils.utils import exchange_can_batch
 
-cache = {}
+CACHE = {}
 
 
 def fetch_trades_unbatched(exchange: ccxt.Exchange):
+    """
+    Some exchanges like Binance don't support fetching all trades at
+    once and need to fetch per trading pair (market).
+    """
     markets = exchange.load_markets()
     trades = []
     for market in markets:
@@ -27,12 +36,15 @@ def fetch_trades_unbatched(exchange: ccxt.Exchange):
             print(err)
             continue
 
-        # exchange.rateLimit is millisecons but time.sleep expects seconds
+        # exchange.rateLimit is milliseconds but time.sleep expects seconds
         time.sleep(exchange.rateLimit / 1000)
     return trades
 
 
 def update_exchange_trx_generic(account: Account):
+    """
+    Fetches all trades and if older than last check imports to database
+    """
     exchange: ccxt.Exchange = None
     starttime: datetime = now()
 
@@ -71,68 +83,68 @@ def update_exchange_trx_generic(account: Account):
 
             split = trade["symbol"].split("/")
 
-            t = Transaction()
+            trx = Transaction()
             if trade["side"] == "buy":
-                t.spent_amount = trade["cost"]
-                t.spent_currency = split[1]
+                trx.spent_amount = trade["cost"]
+                trx.spent_currency = split[1]
 
-                t.aquired_amount = trade["amount"]
-                t.aquired_currency = split[0]
+                trx.acquired_amount = trade["amount"]
+                trx.acquired_currency = split[0]
             elif trade["side"] == "sell":
-                t.spent_amount = trade["amount"]
-                t.spent_currency = split[0]
+                trx.spent_amount = trade["amount"]
+                trx.spent_currency = split[0]
 
-                t.aquired_amount = trade["cost"]
-                t.aquired_currency = split[1]
+                trx.acquired_amount = trade["cost"]
+                trx.acquired_currency = split[1]
 
-            t.fee_amount = trade["fee"]["cost"]
-            t.fee_currency = trade["fee"]["currency"]
+            trx.fee_amount = trade["fee"]["cost"]
+            trx.fee_currency = trade["fee"]["currency"]
 
-            t.date = trade["datetime"]
-            t.owner = account.owner
-            t.source_account = account
-            t.target_account = account
+            trx.date = trade["datetime"]
+            trx.owner = account.owner
+            trx.source_account = account
+            trx.target_account = account
 
-            date = parser.parse(t.date)
-            key = t.spent_currency + "-" + str(date.year) + "-" + str(
+            date = parser.parse(trx.date)
+            key = trx.spent_currency + "-" + str(date.year) + "-" + str(
                 date.month) + "-" + str(date.day)
-            key_fee = t.fee_currency + "-" + str(date.year) + "-" + str(
+            key_fee = trx.fee_currency + "-" + str(date.year) + "-" + str(
                 date.month) + "-" + str(date.day)
 
             book_price_btc = book_price_eur = book_price_fee_btc = book_price_fee_eur = None
 
-            if key in cache:
-                book_price_btc = cache[key]["price_btc"]
-                book_price_eur = cache[key]["price_eur"]
+            if key in CACHE:
+                book_price_btc = CACHE[key]["price_btc"]
+                book_price_eur = CACHE[key]["price_eur"]
             else:
                 book_price_btc = cryptocompare.get_historical_price(
-                    t.spent_currency, "BTC", date)[t.spent_currency]["BTC"]
+                    trx.spent_currency, "BTC", date)[trx.spent_currency]["BTC"]
                 book_price_eur = cryptocompare.get_historical_price(
-                    t.spent_currency, "EUR", date)[t.spent_currency]["EUR"]
-                cache[key] = {
+                    trx.spent_currency, "EUR", date)[trx.spent_currency]["EUR"]
+                CACHE[key] = {
                     "price_btc": book_price_btc,
                     "price_eur": book_price_eur
                 }
 
-            if key_fee in cache:
-                book_price_fee_btc = cache[key_fee]["price_btc"]
-                book_price_fee_eur = cache[key_fee]["price_eur"]
+            if key_fee in CACHE:
+                book_price_fee_btc = CACHE[key_fee]["price_btc"]
+                book_price_fee_eur = CACHE[key_fee]["price_eur"]
             else:
                 book_price_fee_btc = cryptocompare.get_historical_price(
-                    t.fee_currency, "BTC", date)[t.fee_currency]["BTC"]
+                    trx.fee_currency, "BTC", date)[trx.fee_currency]["BTC"]
                 book_price_fee_eur = cryptocompare.get_historical_price(
-                    t.fee_currency, "EUR", date)[t.fee_currency]["EUR"]
-                cache[key_fee] = {
+                    trx.fee_currency, "EUR", date)[trx.fee_currency]["EUR"]
+                CACHE[key_fee] = {
                     "price_btc": book_price_fee_btc,
                     "price_eur": book_price_fee_eur
                 }
 
-            t.book_price_btc = t.spent_amount * book_price_btc
-            t.book_price_eur = t.spent_amount * book_price_eur
-            t.book_price_fee_btc = t.fee_amount * book_price_fee_btc
-            t.book_price_fee_eur = t.fee_amount * book_price_fee_eur
+            trx.book_price_btc = trx.spent_amount * book_price_btc
+            trx.book_price_eur = trx.spent_amount * book_price_eur
+            trx.book_price_fee_btc = trx.fee_amount * book_price_fee_btc
+            trx.book_price_fee_eur = trx.fee_amount * book_price_fee_eur
 
-            transactions.append(t)
+            transactions.append(trx)
             time.sleep(0.2)  # avoid hammering the API's
         Transaction.objects.bulk_create(transactions)
     entry: TransactionUpdateHistoryEntry = TransactionUpdateHistoryEntry(

@@ -16,6 +16,7 @@ from backend.accounts.models import Account
 
 
 def update_coinbase_trx(account: Account):
+    """Synchronizes all transactions from Coinbase"""
     last_update_query = TransactionUpdateHistoryEntry.objects.filter(
         account=account).order_by('-date')
     latest_update = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
@@ -46,14 +47,14 @@ def update_coinbase_trx(account: Account):
                     continue
 
                 if trx["resource"] == "buy":
-                    new_trx.aquired_amount = float(trx["amount"]["amount"])
-                    new_trx.aquired_currency = trx["amount"]["currency"]
+                    new_trx.acquired_amount = float(trx["amount"]["amount"])
+                    new_trx.acquired_currency = trx["amount"]["currency"]
 
                     new_trx.spent_amount = float(trx["total"]["amount"])
                     new_trx.spent_currency = trx["total"]["currency"]
                 elif trx["resource"] == "sell":
-                    new_trx.aquired_amount = float(trx["total"]["amount"])
-                    new_trx.aquired_currency = trx["total"]["currency"]
+                    new_trx.acquired_amount = float(trx["total"]["amount"])
+                    new_trx.acquired_currency = trx["total"]["currency"]
 
                     new_trx.spent_amount = float(trx["amount"]["amount"])
                     new_trx.spent_currency = trx["amount"]["currency"]
@@ -61,12 +62,12 @@ def update_coinbase_trx(account: Account):
                     print("not a buy or sell, skipping.")
                     continue
 
-                if new_trx.aquired_currency == "BTC":
-                    new_trx.book_price_btc = new_trx.aquired_amount
+                if new_trx.acquired_currency == "BTC":
+                    new_trx.book_price_btc = new_trx.acquired_amount
                 else:
-                    new_trx.book_price_btc = new_trx.aquired_amount * cc.get_historical_price(
-                        new_trx.aquired_currency, "BTC",
-                        date)[new_trx.aquired_currency]["BTC"]
+                    new_trx.book_price_btc = new_trx.acquired_amount * cc.get_historical_price(
+                        new_trx.acquired_currency, "BTC",
+                        date)[new_trx.acquired_currency]["BTC"]
                 btc_eur = cc.get_historical_price("BTC", "EUR",
                                                   date)["BTC"]["EUR"]
                 new_trx.book_price_eur = float(trx["total"]["amount"])

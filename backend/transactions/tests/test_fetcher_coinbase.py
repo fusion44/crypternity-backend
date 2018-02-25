@@ -224,12 +224,12 @@ def test_refresh_coinbase_trx(monkeypatch: MonkeyPatch):
     btc = 0
     ltc = 0
     for t in transaction:  #type: Transaction
-        if t.aquired_currency == "BTC":
-            btc += t.aquired_amount
+        if t.acquired_currency == "BTC":
+            btc += t.acquired_amount
         elif t.spent_currency == "BTC":
             btc -= t.spent_amount
-        elif t.aquired_currency == "LTC":
-            ltc += t.aquired_amount
+        elif t.acquired_currency == "LTC":
+            ltc += t.acquired_amount
         elif t.spent_currency == "LTC":
             ltc -= t.spent_amount
 

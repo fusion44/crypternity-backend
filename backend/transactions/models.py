@@ -1,8 +1,10 @@
+"""Contains all models necessary for the Transactions application"""
+
 from django.db import models
 
 
 class Transaction(models.Model):
-
+    """Database model for a single transaction"""
     id = models.AutoField(primary_key=True)
 
     owner = models.ForeignKey(
@@ -21,9 +23,9 @@ class Transaction(models.Model):
         to='accounts.Account',
         on_delete=models.PROTECT)
 
-    # Aquired
-    aquired_currency = models.CharField(max_length=10)
-    aquired_amount = models.DecimalField(max_digits=19, decimal_places=10)
+    # Acquired
+    acquired_currency = models.CharField(max_length=10)
+    acquired_amount = models.DecimalField(max_digits=19, decimal_places=10)
     target_account = models.ForeignKey(
         related_name='target_account',
         to='accounts.Account',
@@ -45,7 +47,7 @@ class Transaction(models.Model):
         # convertion to float removes trailing 0's
         return "{} {} => {} {} ==> {} EUR".format(
             float(self.spent_amount), self.spent_currency,
-            float(self.aquired_amount), self.aquired_currency,
+            float(self.acquired_amount), self.acquired_currency,
             float(self.book_price_eur))
 
 
