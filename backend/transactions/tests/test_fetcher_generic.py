@@ -12,7 +12,7 @@ from backend.accounts.models import Account
 from backend.transactions.models import Transaction
 from backend.transactions.models import TransactionUpdateHistoryEntry
 
-from ..fetchers.generic_exchange import update_exchange_tx_generic
+from ..fetchers.generic_exchange import update_exchange_trx_generic
 
 pytestmark = pytest.mark.django_db
 
@@ -147,7 +147,7 @@ def patch_ccxt(monkeypatch: MonkeyPatch):
                         new_get_historical_price)
 
 
-def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
+def test_update_exchange_trx_generic_binance(monkeypatch: MonkeyPatch):
     user = mixer.blend("auth.User")
     account_bin: Account = mixer.blend(
         "accounts.Account", owner=user, service_type="binance")
@@ -156,8 +156,8 @@ def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
 
     patch_ccxt(monkeypatch)
 
-    update_exchange_tx_generic(account_bin)
-    update_exchange_tx_generic(account_crypt)
+    update_exchange_trx_generic(account_bin)
+    update_exchange_trx_generic(account_crypt)
 
     t = Transaction.objects.filter(target_account=account_bin)
     assert t.count() == 3
@@ -178,7 +178,7 @@ def test_update_exchange_tx_generic_binance(monkeypatch: MonkeyPatch):
     assert update_entry.fetched_transactions == 4
 
 
-def test_update_exchange_tx_generic_transaction_history(
+def test_update_exchange_trx_generic_transaction_history(
         monkeypatch: MonkeyPatch):
     """  Test, that the update function does not import  """
     user = mixer.blend("auth.User")
@@ -229,7 +229,7 @@ def test_update_exchange_tx_generic_transaction_history(
             }
         ])
 
-    update_exchange_tx_generic(account_bin)
+    update_exchange_trx_generic(account_bin)
     transaction = Transaction.objects.filter(target_account=account_bin)
     assert transaction.count(
     ) == 1, "Should not import transactions older than last update time"

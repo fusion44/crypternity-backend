@@ -2,9 +2,11 @@ from django.db import models
 
 
 class Account(models.Model):
-    SERVICE_TYPES = (('binance', 'Binance'), ('bitfinex', 'Bitfinex'),
-                     ('coinbase', 'Coinbase'), ('cryptopia', 'Cryptopia'),
-                     ('kraken', 'Kraken'))
+    SERVICE_TYPES = (('binance', 'Binance',
+                      'api'), ('bitfinex', 'Bitfinex',
+                               'api'), ('coinbase', 'Coinbase', 'api'),
+                     ('cryptopia', 'Cryptopia', 'api'), ('kraken', 'Kraken',
+                                                         'api'))
 
     id = models.AutoField(primary_key=True)
 

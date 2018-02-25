@@ -32,7 +32,7 @@ def fetch_trades_unbatched(exchange: ccxt.Exchange):
     return trades
 
 
-def update_exchange_tx_generic(account: Account):
+def update_exchange_trx_generic(account: Account):
     exchange: ccxt.Exchange = None
     starttime: datetime = now()
 

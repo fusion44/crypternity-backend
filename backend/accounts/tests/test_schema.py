@@ -252,12 +252,12 @@ def test_refresh_transactions_mutation(monkeypatch):
     ## This prints True:
     # print(
     #     hasattr(backend.transactions.fetchers.generic_exchange,
-    #             "update_exchange_tx_generic"))
+    #             "update_exchange_trx_generic"))
     #
     ## but the Lambda is never used
     #monkeypatch.setattr(backend.transactions.fetchers.generic_exchange,
-    #                    "update_exchange_tx_generic",
-    #                    new_update_exchange_tx_generic)
+    #                    "update_exchange_trx_generic",
+    #                    new_update_exchange_trx_generic)
     #req.user = usera
     #res = mut.mutate(None, resolveInfo, data)
     #assert res.status == 200, 'Should return success message when update was successfuly started (status 200)'

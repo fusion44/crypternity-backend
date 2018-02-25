@@ -8,12 +8,15 @@ from graphene_django.types import DjangoObjectType
 
 from backend.accounts.models import Account
 
-from backend.accounts.tasks import async_update_exchange_tx_generic
+from backend.accounts.tasks import async_update_account_trx
+
+from backend.transactions.fetchers.coinbase import update_coinbase_trx
 
 
 class SupportedService(graphene.ObjectType):
     short_name = graphene.String()
     long_name = graphene.String()
+    importer = graphene.String()
 
 
 class SupportedSymbol(graphene.ObjectType):
@@ -60,6 +63,7 @@ class Query(object):
             s = SupportedService()
             s.short_name = val[0]
             s.long_name = val[1]
+            s.importer = val[2]
             l.append(s)
         return l
 
@@ -237,9 +241,9 @@ class AccountRefreshTransactionsMutation(graphene.relay.ClientIDMutation):
         else:
             try:
                 print("starting task")
-                async_update_exchange_tx_generic.apply_async(
+                async_update_account_trx.apply_async(
                     args=[account_id], task_id=tid)
-            except async_update_exchange_tx_generic.OperationalError as err:
+            except async_update_account_trx.OperationalError as err:
                 print("Sending task raised: %r", err)
                 return AccountRefreshTransactionsMutation(status=500)
 
