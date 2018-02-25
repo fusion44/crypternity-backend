@@ -30,6 +30,10 @@ CELERY_BROKER_URL = 'amqp://192.168.178.108//'
 
 Replace the ip with your server ip
 
+Run Celery Beat (task scheduler):
+
+* _celery -A backend beat -l debug --scheduler django_celery_beat.schedulers:DatabaseScheduler_
+
 Finally, run Celery:
 
 * _celery worker -A backend --loglevel=debug --concurrency=4_
