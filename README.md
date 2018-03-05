@@ -11,6 +11,7 @@
 * use the environment: _workon crypternity_
 * _./manage.py makemigrations_
 * _./manage.py migrate_
+* copy config.ini.sample to config.ini and change the secret key and database password. The secret key should be a long string of random letters and numbers.
 
 #### RabbitMQ
 
@@ -22,10 +23,10 @@ On the RPi:
 * _docker pull ronnyroos/rpi-rabbitmq_
 * _docker run --restart=unless-stopped -d -p 5672:5672 -p 15672:15672 -v /home/pirate/rabbitmqlogs:/data/log -v /home/pirate/rabbitmqdata:/data/mnesia ronnyroos/rpi-rabbitmq_
 
-On the dev machine, open backend/settings.py and find the following line:
+On the dev machine, open config.ini and find the following line:
 
-```python
-CELERY_BROKER_URL = 'amqp://192.168.178.108//'
+```config
+celery_broker_url = amqp://192.168.178.108//
 ```
 
 Replace the ip with your server ip

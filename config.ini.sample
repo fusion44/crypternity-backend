@@ -1,0 +1,9 @@
+[DEFAULT]
+secret_key = your_supersecret_key
+db_ip = 192.168.178.108
+db_port = 5432
+db_user = your_postgres_username
+db_password = your_supersecret_password
+
+celery_broker_url = amqp://192.168.178.108//
+celery_db = db+sqlite:///results.sqlite

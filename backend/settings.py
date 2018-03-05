@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 from __future__ import absolute_import, unicode_literals
 import os
 import datetime
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&^#y5$zambx^oj9cssr6&4+wots2g2@xnnk_#)3ts*t%l1s(_p'
+SECRET_KEY = config['DEFAULT']['Secret_Key']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -109,10 +113,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'mysecretpassword',
-        'HOST': '192.168.178.108',
-        'PORT': '5432',
+        'USER': config['DEFAULT']['DB_User'],
+        'PASSWORD': config['DEFAULT']['DB_Password'],
+        'HOST': config['DEFAULT']['DB_Ip'],
+        'PORT': config['DEFAULT']['DB_Port'],
     }
 }
 
@@ -156,9 +160,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-CELERY_BROKER_URL = 'amqp://192.168.178.108//'
+CELERY_BROKER_URL = config['DEFAULT']['celery_broker_url']
 
 CELERY_ACCEPT_CONTENT = ['json']
-CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
+CELERY_RESULT_BACKEND = config['DEFAULT']['celery_db']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TRACK_STARTED = True
