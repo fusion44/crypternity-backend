@@ -7,12 +7,12 @@ from collections import namedtuple
 from dateutil import parser
 from django.utils.timezone import now
 
-import cryptocompare as cc
 from coinbase.wallet.client import Client
 
 from backend.transactions.models import Transaction, TransactionUpdateHistoryEntry
 
 from backend.accounts.models import Account
+from backend.utils.utils import get_name_price
 
 
 def update_coinbase_trx(account: Account):
@@ -46,6 +46,7 @@ def update_coinbase_trx(account: Account):
                 if date <= latest_update:
                     continue
 
+                timestamp = time.mktime(date.timetuple())
                 if trx["resource"] == "buy":
                     new_trx.acquired_amount = float(trx["amount"]["amount"])
                     new_trx.acquired_currency = trx["amount"]["currency"]
@@ -65,18 +66,19 @@ def update_coinbase_trx(account: Account):
                 if new_trx.acquired_currency == "BTC":
                     new_trx.book_price_btc = new_trx.acquired_amount
                 else:
-                    new_trx.book_price_btc = new_trx.acquired_amount * cc.get_historical_price(
-                        new_trx.acquired_currency, "BTC",
-                        date)[new_trx.acquired_currency]["BTC"]
-                btc_eur = cc.get_historical_price("BTC", "EUR",
-                                                  date)["BTC"]["EUR"]
+                    new_trx.book_price_btc = get_name_price(
+                        new_trx.acquired_amount, new_trx.acquired_currency,
+                        "BTC", timestamp)
+
                 new_trx.book_price_eur = float(trx["total"]["amount"])
-                new_trx.book_price_btc = new_trx.book_price_eur / btc_eur
+                new_trx.book_price_btc = get_name_price(
+                    new_trx.book_price_eur, "EUR", "BTC", timestamp)
 
                 new_trx.fee_amount = new_trx.book_price_fee_eur = float(
                     trx["fees"][0]["amount"]["amount"])
                 new_trx.fee_currency = trx["fees"][0]["amount"]["currency"]
-                new_trx.book_price_fee_btc = new_trx.book_price_fee_eur / btc_eur
+                new_trx.book_price_fee_btc = get_name_price(
+                    new_trx.book_price_fee_eur, "EUR", "BTC", timestamp)
 
                 new_trx.owner = account.owner
                 new_trx.source_account = account

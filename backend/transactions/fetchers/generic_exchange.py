@@ -11,15 +11,13 @@ from requests.exceptions import ReadTimeout
 from dateutil import parser
 from django.db.models import QuerySet
 
-import cryptocompare
+from backend.utils.utils import get_name_price
 
 from backend.accounts.models import Account
 from backend.transactions.models import Transaction
 from backend.transactions.models import TransactionUpdateHistoryEntry
 
 from ...utils.utils import exchange_can_batch
-
-CACHE = {}
 
 
 def fetch_trades_unbatched(exchange: ccxt.Exchange):
@@ -106,43 +104,16 @@ def update_exchange_trx_generic(account: Account):
             trx.target_account = account
 
             date = parser.parse(trx.date)
-            key = trx.spent_currency + "-" + str(date.year) + "-" + str(
-                date.month) + "-" + str(date.day)
-            key_fee = trx.fee_currency + "-" + str(date.year) + "-" + str(
-                date.month) + "-" + str(date.day)
+            timestamp = time.mktime(date.timetuple())
 
-            book_price_btc = book_price_eur = book_price_fee_btc = book_price_fee_eur = None
-
-            if key in CACHE:
-                book_price_btc = CACHE[key]["price_btc"]
-                book_price_eur = CACHE[key]["price_eur"]
-            else:
-                book_price_btc = cryptocompare.get_historical_price(
-                    trx.spent_currency, "BTC", date)[trx.spent_currency]["BTC"]
-                book_price_eur = cryptocompare.get_historical_price(
-                    trx.spent_currency, "EUR", date)[trx.spent_currency]["EUR"]
-                CACHE[key] = {
-                    "price_btc": book_price_btc,
-                    "price_eur": book_price_eur
-                }
-
-            if key_fee in CACHE:
-                book_price_fee_btc = CACHE[key_fee]["price_btc"]
-                book_price_fee_eur = CACHE[key_fee]["price_eur"]
-            else:
-                book_price_fee_btc = cryptocompare.get_historical_price(
-                    trx.fee_currency, "BTC", date)[trx.fee_currency]["BTC"]
-                book_price_fee_eur = cryptocompare.get_historical_price(
-                    trx.fee_currency, "EUR", date)[trx.fee_currency]["EUR"]
-                CACHE[key_fee] = {
-                    "price_btc": book_price_fee_btc,
-                    "price_eur": book_price_fee_eur
-                }
-
-            trx.book_price_btc = trx.spent_amount * book_price_btc
-            trx.book_price_eur = trx.spent_amount * book_price_eur
-            trx.book_price_fee_btc = trx.fee_amount * book_price_fee_btc
-            trx.book_price_fee_eur = trx.fee_amount * book_price_fee_eur
+            trx.book_price_btc = get_name_price(
+                trx.spent_amount, trx.spent_currency, "BTC", timestamp)
+            trx.book_price_eur = get_name_price(
+                trx.spent_amount, trx.spent_currency, "EUR", timestamp)
+            trx.book_price_fee_btc = get_name_price(
+                trx.fee_amount, trx.fee_currency, "BTC", timestamp)
+            trx.book_price_fee_eur = get_name_price(
+                trx.fee_amount, trx.fee_currency, "EUR", timestamp)
 
             transactions.append(trx)
             time.sleep(0.2)  # avoid hammering the API's
