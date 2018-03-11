@@ -8,3 +8,10 @@ app = Celery("backend")
 app.config_from_object("django.conf:settings", namespace='CELERY')
 
 app.autodiscover_tasks()
+
+app.conf.beat_schedule = {
+    'update-coins-every-24-hours': {
+        'task': 'backend.coins.tasks.async_update_supported_coins',
+        'schedule': 86400.0  # 24 hours
+    },
+}

@@ -1,12 +1,14 @@
 import graphene
 
+import backend.coins.schema
 import backend.accounts.schema
 import backend.transactions.schema
 import backend.user_profile.schema
 
 
-class Query(backend.user_profile.schema.Query, backend.accounts.schema.Query,
-            backend.transactions.schema.Query, graphene.ObjectType):
+class Query(backend.coins.schema.Query, backend.user_profile.schema.Query,
+            backend.accounts.schema.Query, backend.transactions.schema.Query,
+            graphene.ObjectType):
     # This class will inherit from multiple Queries
     # as we begin to add more apps to our project
     pass
