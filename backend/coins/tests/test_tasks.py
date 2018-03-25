@@ -73,7 +73,7 @@ def test_async_update_coins(monkeypatch):
 
     # Test import the objects
     monkeypatch.setattr('cryptocompare.get_coin_list', new_get_coin_list)
-    async_update_supported_coins()
+    async_update_supported_coins()  #pylint: disable=E1120
     all_coins: QuerySet = Coin.objects.all()
     assert all_coins.count() == 2
 

@@ -12,6 +12,9 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'update-coins-every-24-hours': {
         'task': 'backend.coins.tasks.async_update_supported_coins',
-        'schedule': 86400.0  # 24 hours
+        'schedule': 86400.0,  # 24 hours
+        'options': {
+            'task_id': "task_update_coins"
+        },
     },
 }
