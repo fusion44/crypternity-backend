@@ -12,10 +12,11 @@ class UserType(DjangoObjectType):
 
 
 class Query(object):
+    '''Query class for everything related to users'''
+    get_current_user = graphene.Field(UserType)
 
-    current_user = graphene.Field(UserType)
-
-    def resolve_current_user(self, info):
-        if not info.user.is_authenticated:
+    def resolve_get_current_user(self, info):
+        '''Returns the current user if authenticated, None otherwise'''
+        if not info.context.user.is_authenticated:
             return None
-        return info.user
+        return info.context.user
