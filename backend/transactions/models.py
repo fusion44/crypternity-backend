@@ -18,17 +18,19 @@ class Transaction(models.Model):
     # Spent
     spent_currency = models.CharField(max_length=10)
     spent_amount = models.DecimalField(max_digits=19, decimal_places=10)
-    source_account = models.ForeignKey(
-        related_name='source_account',
-        to='accounts.Account',
+    source_peer = models.ForeignKey(
+        default=1,
+        related_name='source_peer',
+        to='accounts.Peer',
         on_delete=models.PROTECT)
 
     # Acquired
     acquired_currency = models.CharField(max_length=10)
     acquired_amount = models.DecimalField(max_digits=19, decimal_places=10)
-    target_account = models.ForeignKey(
-        related_name='target_account',
-        to='accounts.Account',
+    target_peer = models.ForeignKey(
+        default=1,
+        related_name='target_peer',
+        to='accounts.Peer',
         on_delete=models.PROTECT)
 
     # Fees and book prices are calculated using the mean price of the coin at that day

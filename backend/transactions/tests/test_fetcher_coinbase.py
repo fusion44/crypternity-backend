@@ -218,7 +218,7 @@ def test_refresh_coinbase_trx(monkeypatch: MonkeyPatch):
                         new_get_sells)
 
     update_coinbase_trx(account)
-    transaction = Transaction.objects.filter(target_account=account)
+    transaction = Transaction.objects.filter(target_peer=account)
     assert transaction.count() == 6, "Should import six transations"
 
     btc = 0
@@ -306,6 +306,6 @@ def test_update_trx_coinbase_transaction_history(monkeypatch: MonkeyPatch):
         fetched_transactions=3)
 
     update_coinbase_trx(account)
-    transaction = Transaction.objects.filter(target_account=account)
+    transaction = Transaction.objects.filter(target_peer=account)
     assert transaction.count(
     ) == 1, "Should not import transactions older than last update time"

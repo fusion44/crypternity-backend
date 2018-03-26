@@ -159,10 +159,10 @@ def test_update_exchange_trx_generic_binance(monkeypatch: MonkeyPatch):
     update_exchange_trx_generic(account_bin)
     update_exchange_trx_generic(account_crypt)
 
-    t = Transaction.objects.filter(target_account=account_bin)
+    t = Transaction.objects.filter(target_peer=account_bin)
     assert t.count() == 3
 
-    t = Transaction.objects.filter(target_account=account_crypt)
+    t = Transaction.objects.filter(target_peer=account_crypt)
     assert t.count() == 4
 
     t: Transaction = Transaction.objects.get(pk=BINANCE_CHECK_TRANSACTION_ID)
@@ -230,6 +230,6 @@ def test_update_exchange_trx_generic_transaction_history(
         ])
 
     update_exchange_trx_generic(account_bin)
-    transaction = Transaction.objects.filter(target_account=account_bin)
+    transaction = Transaction.objects.filter(target_peer=account_bin)
     assert transaction.count(
     ) == 1, "Should not import transactions older than last update time"

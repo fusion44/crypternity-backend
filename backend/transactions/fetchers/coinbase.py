@@ -81,8 +81,8 @@ def update_coinbase_trx(account: Account):
                     new_trx.book_price_fee_eur, "EUR", "BTC", timestamp)
 
                 new_trx.owner = account.owner
-                new_trx.source_account = account
-                new_trx.target_account = account
+                new_trx.source_peer = account
+                new_trx.target_peer = account
                 new_transactions.append(new_trx)
                 time.sleep(2)  # sleep to prevent api spam
 

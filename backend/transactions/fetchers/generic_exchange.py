@@ -100,8 +100,8 @@ def update_exchange_trx_generic(account: Account):
 
             trx.date = trade["datetime"]
             trx.owner = account.owner
-            trx.source_account = account
-            trx.target_account = account
+            trx.source_peer = account
+            trx.target_peer = account
 
             date = parser.parse(trx.date)
             timestamp = time.mktime(date.timetuple())
