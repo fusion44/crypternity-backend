@@ -4,6 +4,9 @@ from django.db import models
 
 
 class Transaction(models.Model):
+    class Meta:
+        ordering = ('-date', )
+
     """Database model for a single transaction"""
     id = models.AutoField(primary_key=True)
 

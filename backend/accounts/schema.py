@@ -6,11 +6,16 @@ from django.db.models import ObjectDoesNotExist
 
 from graphene_django.types import DjangoObjectType
 
-from backend.accounts.models import Account
+from backend.accounts.models import Peer, Account
 
 from backend.accounts.tasks import async_update_account_trx
 
 from backend.transactions.fetchers.coinbase import update_coinbase_trx
+
+
+class PeerType(DjangoObjectType):
+    class Meta:
+        model = Peer
 
 
 class SupportedService(graphene.ObjectType):
