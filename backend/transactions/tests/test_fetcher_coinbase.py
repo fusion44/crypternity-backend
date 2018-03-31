@@ -14,11 +14,14 @@ from ..fetchers.coinbase import update_coinbase_trx
 
 pytestmark = pytest.mark.django_db
 
+NULL_CB_API_OBJECT = {"pagination": {"next_uri": None}, "data": []}
+
 
 def new_get_accounts(self):
     """Fake coinbase get accounts for user"""
     json_obj = json.loads("""
     {
+        "pagination": {"next_uri": null},
         "data": [
             {
                 "id": "fiat_id",
@@ -42,10 +45,14 @@ def new_get_buys(self, cb_account_id):
     """Fake get buys for account"""
     if cb_account_id == "wallet_id_btc":
         return {
+            "pagination": {
+                "next_uri": None
+            },
             "data": [
                 {
                     "created_at": "2017-12-27T15:16:22Z",
                     "resource": "buy",
+                    "status": "completed",
                     "amount": {
                         "amount": 0.04,
                         "currency": "BTC"
@@ -62,8 +69,15 @@ def new_get_buys(self, cb_account_id):
                     }]
                 },
                 {
+                    "created_at": "2017-12-27T15:16:22Z",
+                    "resource": "buy",
+                    # should be skipped since it was canceled
+                    "status": "canceled"
+                },
+                {
                     "created_at": "2018-01-28T13:11:35Z",
                     "resource": "buy",
+                    "status": "completed",
                     "amount": {
                         "amount": 0.05,
                         "currency": "BTC"
@@ -82,7 +96,9 @@ def new_get_buys(self, cb_account_id):
                 {
                     "created_at": "2018-01-28T13:11:35Z",
                     # should be skipped and not end up in the database (neither sell nor buy)
+                    # and it's status is canceled
                     "resource": "should be skipped",
+                    "status": "canceled",
                     "amount": {
                         "amount": 0.05,
                         "currency": "BTC"
@@ -102,11 +118,15 @@ def new_get_buys(self, cb_account_id):
         }
     elif cb_account_id == "wallet_id_ltc":
         return {
+            "pagination": {
+                "next_uri": None
+            },
             "data": [{
                 "created_at": "2018-01-22T12:26:35Z",
                 "resource": "buy",
+                "status": "completed",
                 "amount": {
-                    "amount": 1.2,
+                    "amount": 2.2,
                     "currency": "LTC"
                 },
                 "total": {
@@ -122,8 +142,9 @@ def new_get_buys(self, cb_account_id):
             }, {
                 "created_at": "2018-01-22T11:04:01Z",
                 "resource": "buy",
+                "status": "completed",
                 "amount": {
-                    "amount": 0.4,
+                    "amount": 1.4,
                     "currency": "LTC"
                 },
                 "total": {
@@ -139,16 +160,20 @@ def new_get_buys(self, cb_account_id):
             }]
         }
     else:
-        return {"data": []}
+        return NULL_CB_API_OBJECT
 
 
 def new_get_sells(self, cb_account_id):
     """Fake get sells for account"""
     if cb_account_id == "wallet_id_btc":
         return {
+            "pagination": {
+                "next_uri": None
+            },
             "data": [{
                 "created_at": "2018-01-25T11:24:52Z",
                 "resource": "sell",
+                "status": "completed",
                 "amount": {
                     "amount": 0.06,
                     "currency": "BTC"
@@ -167,9 +192,13 @@ def new_get_sells(self, cb_account_id):
         }
     elif cb_account_id == "wallet_id_ltc":
         return {
+            "pagination": {
+                "next_uri": None
+            },
             "data": [{
                 "created_at": "2018-01-23T07:23:54Z",
                 "resource": "sell",
+                "status": "completed",
                 "amount": {
                     "amount": 0.3,
                     "currency": "LTC"
@@ -187,7 +216,121 @@ def new_get_sells(self, cb_account_id):
             }]
         }
     else:
-        return {"data": []}
+        return NULL_CB_API_OBJECT
+
+
+def new_get_transactions(self, cb_account_id):
+    """Fake get transactions for account"""
+    if cb_account_id == "wallet_id_ltc":
+        return {
+            "pagination": {
+                "next_uri": None
+            },
+            "data": [
+                {
+                    "id": "12234-6666-8888-0000-1111111111",
+                    "type": "send",
+                    "status": "completed",
+                    "amount": {
+                        "amount": "-0.2",
+                        "currency": "LTC"
+                    },
+                    "native_amount": {
+                        "amount": "-46.00",
+                        "currency": "EUR"
+                    },
+                    "description": None,
+                    "created_at": "2017-12-15T15:00:00Z",
+                    "updated_at": "2017-12-15T15:00:00Z",
+                    "resource": "transaction",
+                    "network": {
+                        "status": "confirmed",
+                        "hash": "123456789",
+                        "transaction_fee": {
+                            "amount": "0.001",
+                            "currency": "LTC"
+                        },
+                        "transaction_amount": {
+                            "amount": "0.199",
+                            "currency": "LTC"
+                        },
+                        "confirmations": 54000
+                    },
+                    "to": {
+                        "resource": "litecoin_address",
+                        "address": "LcnAddress1",
+                        "currency": "LTC"
+                    },
+                    "details": {
+                        "title": "Sent Litecoin",
+                        "subtitle": "To Litecoin address"
+                    }
+                },
+                {
+                    "id": "aaaaaaaaa-aaaa-aaaaaa-eeee-aaaaaa",
+                    "type": "send",
+                    "status": "completed",
+                    "amount": {
+                        "amount": "-0.4",
+                        "currency": "LTC"
+                    },
+                    "native_amount": {
+                        "amount": "-90.00",
+                        "currency": "EUR"
+                    },
+                    "description": None,
+                    "created_at": "2017-12-11T19:00:00Z",
+                    "updated_at": "2017-12-11T19:00:00Z",
+                    "resource": "transaction",
+                    "instant_exchange": False,
+                    "network": {
+                        "status": "confirmed",
+                        "hash": "123456789",
+                        "transaction_fee": {
+                            "amount": "0.001",
+                            "currency": "LTC"
+                        },
+                        "transaction_amount": {
+                            "amount": "0.399",
+                            "currency": "LTC"
+                        },
+                        "confirmations": 15387
+                    },
+                    "to": {
+                        "resource": "litecoin_address",
+                        "address": "LcnAddress2",
+                        "currency": "LTC"
+                    },
+                    "details": {
+                        "title": "Sent Litecoin",
+                        "subtitle": "To Litecoin address"
+                    }
+                },
+                {
+                    "id": "aaaaaaaaa-aaaa-aaaaaa-eeee-aaaaaa",
+                    "type": "send",
+                    "status": "completed",
+                    "amount": {
+                        "amount": "1.0",
+                        "currency": "LTC"
+                    },
+                    "native_amount": {
+                        "amount": "90.00",
+                        "currency": "EUR"
+                    },
+                    "description": None,
+                    "created_at": "2017-12-11T19:00:00Z",
+                    "updated_at": "2017-12-11T19:00:00Z",
+                    "resource": "transaction",
+                    "instant_exchange": False,
+                    "network": {
+                        "status": "off_blockchain",
+                    },
+                },
+            ]
+        }
+    else:
+        return NULL_CB_API_OBJECT
 
 
 def new_get_historical_price(base, target, date):
@@ -212,6 +355,8 @@ def test_refresh_coinbase_trx(monkeypatch: MonkeyPatch):
                         new_get_historical_price)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_accounts",
                         new_get_accounts)
+    monkeypatch.setattr(coinbase.wallet.client.Client, "get_transactions",
+                        new_get_transactions)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_buys",
                         new_get_buys)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_sells",
@@ -219,22 +364,7 @@ def test_refresh_coinbase_trx(monkeypatch: MonkeyPatch):
 
     update_coinbase_trx(account)
     transaction = Transaction.objects.filter(target_peer=account)
-    assert transaction.count() == 6, "Should import six transations"
-
-    btc = 0
-    ltc = 0
-    for t in transaction:  #type: Transaction
-        if t.acquired_currency == "BTC":
-            btc += t.acquired_amount
-        elif t.spent_currency == "BTC":
-            btc -= t.spent_amount
-        elif t.acquired_currency == "LTC":
-            ltc += t.acquired_amount
-        elif t.spent_currency == "LTC":
-            ltc -= t.spent_amount
-
-    assert float(btc) == float(0.03), "Should have 0.03 BTC"
-    assert float(ltc) == float(1.3), "Should have 1.3 LTC"
+    assert transaction.count() == 9, "Should import nine transations"
 
 
 def new_get_buys_transaction_history(self, cb_account):
@@ -242,9 +372,13 @@ def new_get_buys_transaction_history(self, cb_account):
     date: datetime = now()
     if cb_account == "wallet_id_btc":
         return {
+            "pagination": {
+                "next_uri": None
+            },
             "data": [{
                 "created_at": str(date + timedelta(days=-1)),
                 "resource": "buy",
+                "status": "completed",
                 "amount": {
                     "amount": 10,
                     "currency": "BTC"
@@ -262,6 +396,7 @@ def new_get_buys_transaction_history(self, cb_account):
             }, {
                 "created_at": str(date + timedelta(days=1)),
                 "resource": "buy",
+                "status": "completed",
                 "amount": {
                     "amount": 5,
                     "currency": "BTC"
@@ -279,7 +414,7 @@ def new_get_buys_transaction_history(self, cb_account):
             }]
         }
     else:
-        return {"data": []}
+        return NULL_CB_API_OBJECT
 
 
 def test_update_trx_coinbase_transaction_history(monkeypatch: MonkeyPatch):
@@ -294,10 +429,12 @@ def test_update_trx_coinbase_transaction_history(monkeypatch: MonkeyPatch):
                         new_get_historical_price)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_accounts",
                         new_get_accounts)
+    monkeypatch.setattr(coinbase.wallet.client.Client, "get_transactions",
+                        new_get_transactions)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_buys",
                         new_get_buys_transaction_history)
     monkeypatch.setattr(coinbase.wallet.client.Client, "get_sells",
-                        lambda self, cb_account: {"data": []})
+                        lambda self, cb_account: NULL_CB_API_OBJECT)
 
     mixer.blend(
         "transactions.TransactionUpdateHistoryEntry",
