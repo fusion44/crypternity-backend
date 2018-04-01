@@ -156,10 +156,8 @@ def fetch_from_cb(what_to_fetch: str, cb_client: Client,
         elif what_to_fetch == "transfers":
             ret = cb_client.get_transactions(cb_account_id, **data)
 
-        print(ret)
-
         the_list.extend(ret["data"])
-        next_uri = ret["pagination"]["next_uri"]
+        next_uri = ret.pagination["next_uri"]
         if next_uri != None:
             data["starting_after"] = ret["data"][-1]["id"]
     return the_list
