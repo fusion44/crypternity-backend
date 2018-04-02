@@ -38,8 +38,6 @@ def get_name_price(amount: float,
     if request_res is None:
         request_res = cc.get_historical_price(base, target, timestamp)
         CACHE.add(key, request_res)
-    else:
-        print("Cache hit")
 
     val = request_res[base][target]
 
