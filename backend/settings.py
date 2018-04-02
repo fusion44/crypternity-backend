@@ -36,20 +36,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_celery_beat',
-    'rest_framework',
-    'corsheaders',
-    'backend.accounts',
-    'backend.coins',
-    'backend.transactions',
-    'backend.user_profile',
-    'graphene_django',
+    'django.contrib.admin', 'django.contrib.auth',
+    'django.contrib.contenttypes', 'django.contrib.sessions',
+    'django.contrib.messages', 'django.contrib.staticfiles',
+    'django_celery_beat', 'rest_framework', 'corsheaders', 'backend.accounts',
+    'backend.coins', 'backend.transactions', 'backend.user_profile',
+    'graphene_django', 'taggit'
 ]
 
 GRAPHENE = {'SCHEMA': 'backend.schema.schema'}

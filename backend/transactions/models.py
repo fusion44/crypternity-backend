@@ -2,12 +2,37 @@
 
 from django.db import models
 
+from taggit.managers import TaggableManager
+
 
 class Transaction(models.Model):
+    """Database model for a single transaction"""
+
+    # exchange between currencies
+    TRX_TAG_EXCHANGE = "exchange"
+    TRX_ICON_EXCHANGE = "shuffle"
+    # transfer one coin from one wallet to another
+    TRX_TAG_TRANSFER = "transfer"
+    TRX_ICON_TRANSFER = "send"
+    # buy cryptos from fiat
+    TRX_TAG_BUY = "buy"
+    TRX_ICON_BUY = "subdirectory_arrow_right"
+    # sell cryptos for fiat
+    TRX_TAG_SELL = "sell"
+    TRX_ICON_SELL = "subdirectory_arrow_left"
+    # income for a service or sell of a good (refferal bonus, selling of hardware etc)
+    TRX_TAG_INCOME = "income"
+    TRX_ICON_INCOME = "arrow_forward"
+    # expense for a service or buy of a good (online subscription, buy of an hardware)
+    TRX_TAG_EXPENSE = "expense"
+    TRX_ICON_EXPENSE = "arrow_backward"
+    # mining income
+    TRX_TAG_MINING = "mining"
+    TRX_ICON_MINING = "gavel"
+
     class Meta:
         ordering = ('-date', )
 
-    """Database model for a single transaction"""
     id = models.AutoField(primary_key=True)
 
     owner = models.ForeignKey(
@@ -50,6 +75,10 @@ class Transaction(models.Model):
         max_digits=19, default=0, decimal_places=10)
     book_price_fee_btc = models.DecimalField(
         max_digits=19, default=0, decimal_places=10)
+
+    tags = TaggableManager()
+
+    icon = models.CharField(default="help_outline", max_length=100)
 
     def __str__(self):
         # convertion to float removes trailing 0's

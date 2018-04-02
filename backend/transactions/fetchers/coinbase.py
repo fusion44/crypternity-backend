@@ -1,4 +1,9 @@
-"""Contains all functions related to importing Coinbase data"""
+"""
+Contains all functions related to importing Coinbase data
+
+Note: We cannot use Transaction.objects.bulk_create since
+django-taggit needs object id before saving.
+"""
 
 import json
 import time
@@ -14,6 +19,8 @@ from backend.transactions.models import Transaction, TransactionUpdateHistoryEnt
 
 from backend.accounts.models import Account
 from backend.utils.utils import get_name_price
+
+TAG_COINBASE = "coinbase"
 
 
 def process_send(cb_trx, timestamp: int, account: Account) -> Transaction:
@@ -37,11 +44,14 @@ def process_send(cb_trx, timestamp: int, account: Account) -> Transaction:
 
     network = cb_trx["network"]
 
+    tag = ""
+
     if network["status"] == "off_blockchain":
         # could be a refferal bonus from Coinbase
         new_trx.acquired_amount = abs(float(cb_trx["amount"]["amount"]))
         new_trx.acquired_currency = cb_trx["amount"]["currency"]
-
+        tag = Transaction.TRX_TAG_INCOME
+        new_trx.icon = Transaction.TRX_ICON_INCOME
         # a refferal bonus has no fee, so use defaults from model
     else:
         # amount received on target peer (spent amount with network fees deducted)
@@ -57,6 +67,8 @@ def process_send(cb_trx, timestamp: int, account: Account) -> Transaction:
             new_trx.fee_amount, new_trx.fee_currency, "EUR", timestamp)
         new_trx.book_price_fee_btc = get_name_price(
             new_trx.fee_amount, new_trx.fee_currency, "BTC", timestamp)
+        tag = Transaction.TRX_TAG_TRANSFER
+        new_trx.icon = Transaction.TRX_ICON_TRANSFER
 
     # calculate book prices
     # number might be negative, make absolute
@@ -66,11 +78,13 @@ def process_send(cb_trx, timestamp: int, account: Account) -> Transaction:
 
     new_trx.owner = account.owner
     new_trx.source_peer = account
-
     # TODO: get target address and query database for known addresses
     # If it exists, get the parent Peer for this address and set as target
     # new_trx.target_peer = None
-    return new_trx
+
+    new_trx.save()
+    new_trx.tags.add(TAG_COINBASE, tag)
+    new_trx.save()
 
 
 def process_buy_sell(cb_trx, timestamp, account: Account) -> Transaction:
@@ -91,18 +105,24 @@ def process_buy_sell(cb_trx, timestamp, account: Account) -> Transaction:
     new_trx: Transaction = Transaction()
     new_trx.date = cb_trx["created_at"]
 
+    tag = "None"
+
     if cb_trx["resource"] == "buy":
         new_trx.acquired_amount = float(cb_trx["amount"]["amount"])
         new_trx.acquired_currency = cb_trx["amount"]["currency"]
 
         new_trx.spent_amount = float(cb_trx["total"]["amount"])
         new_trx.spent_currency = cb_trx["total"]["currency"]
+        new_trx.icon = Transaction.TRX_ICON_BUY
+        tag = Transaction.TRX_TAG_BUY
     elif cb_trx["resource"] == "sell":
         new_trx.acquired_amount = float(cb_trx["total"]["amount"])
         new_trx.acquired_currency = cb_trx["total"]["currency"]
 
         new_trx.spent_amount = float(cb_trx["amount"]["amount"])
         new_trx.spent_currency = cb_trx["amount"]["currency"]
+        new_trx.icon = Transaction.TRX_ICON_SELL
+        tag = Transaction.TRX_TAG_SELL
     else:
         raise ValueError("Type of transaction must either be buy or sell")
 
@@ -126,7 +146,9 @@ def process_buy_sell(cb_trx, timestamp, account: Account) -> Transaction:
     new_trx.owner = account.owner
     new_trx.source_peer = account
     new_trx.target_peer = account
-    return new_trx
+    new_trx.save()
+    new_trx.tags.add(TAG_COINBASE, tag)
+    new_trx.save()
 
 
 def fetch_from_cb(what_to_fetch: str, cb_client: Client,
@@ -174,7 +196,7 @@ def update_coinbase_trx(account: Account):
     client: Client = Client(account.api_key, account.api_secret)
     cb_accounts = client.get_accounts()
 
-    new_transactions = []
+    num_imports = 0
 
     for cb_account in cb_accounts["data"]:
         if cb_account["type"] == "fiat":
@@ -191,9 +213,8 @@ def update_coinbase_trx(account: Account):
                 if date <= latest_update:
                     continue
                 timestamp = time.mktime(date.timetuple())
-
-                new_transactions.append(
-                    process_send(cb_trx, timestamp, account))
+                process_send(cb_trx, timestamp, account)
+                num_imports += 1
                 time.sleep(1)  # sleep to prevent api spam
 
         buy_sell_list = []
@@ -211,15 +232,12 @@ def update_coinbase_trx(account: Account):
                 if date <= latest_update:
                     continue
                 timestamp = time.mktime(date.timetuple())
-                new_transactions.append(
-                    process_buy_sell(buy_sell, timestamp, account))
+                process_buy_sell(buy_sell, timestamp, account)
+                num_imports += 1
                 time.sleep(1)  # sleep to prevent api spam
 
-    Transaction.objects.bulk_create(new_transactions)
     entry: TransactionUpdateHistoryEntry = TransactionUpdateHistoryEntry(
-        date=now(),
-        account=account,
-        fetched_transactions=len(new_transactions))
+        date=now(), account=account, fetched_transactions=num_imports)
     entry.save()
 
-    print("Imported {} transactions".format(len(new_transactions)))
+    print("Imported {} transactions".format(num_imports))

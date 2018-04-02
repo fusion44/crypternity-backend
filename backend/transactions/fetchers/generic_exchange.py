@@ -70,6 +70,9 @@ def update_exchange_trx_generic(account: Account):
     else:
         trades = fetch_trades_unbatched(exchange)
 
+    total = len(trades)
+    num_imports = 0
+
     if trades:
         for trade in trades:
             # print(trade["symbol"] + " " + trade["datetime"])
@@ -114,12 +117,14 @@ def update_exchange_trx_generic(account: Account):
                 trx.fee_amount, trx.fee_currency, "BTC", timestamp)
             trx.book_price_fee_eur = get_name_price(
                 trx.fee_amount, trx.fee_currency, "EUR", timestamp)
-
-            transactions.append(trx)
+            trx.icon = Transaction.TRX_ICON_EXCHANGE
+            trx.save()
+            trx.tags.add(account.service_type, Transaction.TRX_TAG_EXCHANGE)
+            trx.save()
+            num_imports += 1
             time.sleep(0.2)  # avoid hammering the API's
-        Transaction.objects.bulk_create(transactions)
+
+    print("Imported {} trades.".format(num_imports))
     entry: TransactionUpdateHistoryEntry = TransactionUpdateHistoryEntry(
-        date=starttime,
-        account=account,
-        fetched_transactions=len(transactions))
+        date=starttime, account=account, fetched_transactions=num_imports)
     entry.save()

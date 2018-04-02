@@ -11,6 +11,31 @@ from backend.transactions.models import Transaction
 class TransactionType(DjangoObjectType):
     class Meta:
         model = Transaction
+        only_fields = [
+            'id',
+            'owner',
+            'date',
+            'spent_currency',
+            'spent_amount',
+            'source_peer',
+            'acquired_currency',
+            'acquired_amount',
+            "target_peer",
+            "fee_currency",
+            "fee_amount",
+            "book_price_eur",
+            "book_price_btc",
+            "book_price_fee_eur",
+            "book_price_fee_btc",
+            "icon",
+        ]
+
+    tags = graphene.List(graphene.String)
+
+    @staticmethod
+    def resolve_tags(self: Transaction, context, **kwargs):
+        """Resolve all tags associated with this object"""
+        return self.tags.all().order_by("name")
 
 
 class Query(object):
