@@ -69,8 +69,9 @@ class Account(Peer):
     SERVICE_TYPES = (('binance', 'Binance',
                       'api'), ('bitfinex', 'Bitfinex',
                                'api'), ('coinbase', 'Coinbase', 'api'),
-                     ('cryptopia', 'Cryptopia', 'api'), ('kraken', 'Kraken',
-                                                         'api'))
+                     ('cryptopia', 'Cryptopia',
+                      'api'), ('kraken', 'Kraken',
+                               'api'), ('livecoin', 'Livecoin', 'manual'))
 
     owner = models.ForeignKey(
         'auth.user',
@@ -81,9 +82,9 @@ class Account(Peer):
 
     service_type = models.CharField(max_length=50)
 
-    api_key = models.CharField(max_length=100)
+    api_key = models.CharField(max_length=100, blank=True, null=True)
 
-    api_secret = models.CharField(max_length=100)
+    api_secret = models.CharField(max_length=100, blank=True, null=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 
