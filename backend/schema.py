@@ -21,6 +21,8 @@ class Mutation(graphene.ObjectType):
     )
     coins_refresh_mutation = backend.coins.schema.CoinRefreshTransactionsMutation.Field(
     )
+    import_transaction = backend.transactions.schema.ImportTransactionsMutation.Field(
+    )
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

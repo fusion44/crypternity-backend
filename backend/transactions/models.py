@@ -30,6 +30,10 @@ class Transaction(models.Model):
     TRX_TAG_MINING = "mining"
     TRX_ICON_MINING = "gavel"
 
+    # for transactions that need attention by the user
+    TRX_TAG_WARNING = "warning"
+    TRX_ICON_WARNING = "warning"
+
     class Meta:
         ordering = ('-date', )
 
@@ -44,8 +48,9 @@ class Transaction(models.Model):
     date = models.DateTimeField()
 
     # Spent
-    spent_currency = models.CharField(max_length=10)
-    spent_amount = models.DecimalField(max_digits=19, decimal_places=10)
+    spent_currency = models.CharField(max_length=10, default="---")
+    spent_amount = models.DecimalField(
+        max_digits=19, decimal_places=10, default=0)
     source_peer = models.ForeignKey(
         default=1,
         related_name='source_peer',
@@ -53,8 +58,9 @@ class Transaction(models.Model):
         on_delete=models.PROTECT)
 
     # Acquired
-    acquired_currency = models.CharField(max_length=10)
-    acquired_amount = models.DecimalField(max_digits=19, decimal_places=10)
+    acquired_currency = models.CharField(max_length=10, default="---")
+    acquired_amount = models.DecimalField(
+        max_digits=19, decimal_places=10, default=0)
     target_peer = models.ForeignKey(
         default=1,
         related_name='target_peer',

@@ -123,7 +123,7 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
         api_secret = input.get("api_secret", "").strip()
 
         # TODO: validate input using django forms or whatnot
-        if not name or not service_type or not api_key or not api_secret:
+        if not name or not service_type:
             return CreateAccountMutation(
                 status=400,
                 formErrors=json.dumps({
