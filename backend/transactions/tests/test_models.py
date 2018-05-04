@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from backend.accounts.models import Account
 from backend.transactions.models import Transaction
 from backend.transactions.models import TransactionUpdateHistoryEntry
+from backend.test_utils.utils import gen_fake_transaction
 
 # We need to do this so that writing to the DB is possible in our tests.
 pytestmark = pytest.mark.django_db
@@ -14,14 +15,13 @@ pytestmark = pytest.mark.django_db
 
 
 def test_transaction_creation():
-    obj = mixer.blend("transactions.Transaction")
+    obj = gen_fake_transaction()
     assert obj.pk > 0, "Should create an Transaction instance"
 
 
 def test_transaction_str_func():
     name = "50.0 BTC => 150.01 ETH ==> 300.0 EUR"
-    t: Transaction = mixer.blend(
-        "transactions.Transaction",
+    t = gen_fake_transaction(
         spent_amount=50.0000,
         spent_currency="BTC",
         acquired_amount=150.0100,

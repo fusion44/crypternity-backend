@@ -329,7 +329,7 @@ def test_refresh_coinbase_trx(monkeypatch: MonkeyPatch):
     """Test import coinbase transactions"""
     user = mixer.blend("auth.User")
     account: Account = mixer.blend(
-        "accounts.Account", owner=user, service_type="coinbase")
+        "accounts.Account", owner=user, service_type="coinbase", api_key="123", api_secret="456")
 
     monkeypatch.setattr(cryptocompare, "get_historical_price",
                         new_get_historical_price)
@@ -397,7 +397,7 @@ def test_update_trx_coinbase_transaction_history(monkeypatch: MonkeyPatch):
     """  Test, that the update function does not import  """
     user = mixer.blend("auth.User")
     account: Account = mixer.blend(
-        "accounts.Account", owner=user, service_type="coinbase")
+        "accounts.Account", owner=user, service_type="coinbase", api_key="123", api_secret="456")
 
     date: datetime = now()
 

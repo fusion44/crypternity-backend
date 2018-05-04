@@ -6,7 +6,7 @@ from django.test import RequestFactory
 
 import backend.transactions.schema as schema
 from backend.transactions.models import Transaction
-from backend.test_utils.utils import mock_resolve_info
+from backend.test_utils.utils import mock_resolve_info, gen_fake_transaction
 
 # We need to do this so that writing to the DB is possible in our tests.
 pytestmark = pytest.mark.django_db
@@ -22,9 +22,9 @@ def test_resolve_get_transaction_by_id():
     usera = mixer.blend("auth.User")
     userb = mixer.blend("auth.User")
 
-    mixer.blend("transactions.Transaction", owner=usera)
-    mixer.blend("transactions.Transaction", owner=usera)
-    mixer.blend("transactions.Transaction", owner=usera)
+    gen_fake_transaction(owner=usera)
+    gen_fake_transaction(owner=usera)
+    gen_fake_transaction(owner=usera)
 
     req = RequestFactory().get("/")
     req.user = AnonymousUser()
@@ -61,12 +61,12 @@ def test_resolve_all_transactions():
     req.user = AnonymousUser()
     resolveInfo = mock_resolve_info(req)
 
-    mixer.blend("transactions.Transaction", owner=usera)
-    mixer.blend("transactions.Transaction", owner=usera)
+    gen_fake_transaction(owner=usera)
+    gen_fake_transaction(owner=usera)
 
-    mixer.blend("transactions.Transaction", owner=userb)
-    mixer.blend("transactions.Transaction", owner=userb)
-    mixer.blend("transactions.Transaction", owner=userb)
+    gen_fake_transaction(owner=userb)
+    gen_fake_transaction(owner=userb)
+    gen_fake_transaction(owner=userb)
 
     query = schema.Query()
     res = query.resolve_all_transactions(resolveInfo)
