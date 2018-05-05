@@ -11,6 +11,8 @@ def exchange_can_batch(exchange: str) -> bool:
     # Binance, for example. Cryptopia does not have this problem.
     if exchange == "binance":
         return False
+    elif exchange == "bitfinex":
+        return False
 
     return True
 

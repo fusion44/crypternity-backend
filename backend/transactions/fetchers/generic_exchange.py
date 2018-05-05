@@ -35,7 +35,9 @@ def fetch_trades_unbatched(exchange: ccxt.Exchange):
             continue
 
         # exchange.rateLimit is milliseconds but time.sleep expects seconds
-        time.sleep(exchange.rateLimit / 1000)
+        # plus add an extra 2 seconds as some exchanges like Bitfinex have varying rate limits
+        # and still return rate limit exceeded errors when using the value provided by CCXT
+        time.sleep((exchange.rateLimit / 1000) + 2)
     return trades
 
 
