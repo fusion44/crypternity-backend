@@ -4,6 +4,10 @@ from django.db import models
 
 class Coin(models.Model):
     '''Database model representing a coin'''
+
+    class Meta:
+        ordering = ("symbol", )
+
     id = models.AutoField(primary_key=True)
     cc_id = models.IntegerField(unique=True)
     img_url = models.CharField(max_length=200)
