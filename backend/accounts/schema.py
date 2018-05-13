@@ -6,11 +6,9 @@ from django.db.models import ObjectDoesNotExist
 
 from graphene_django.types import DjangoObjectType
 
-from backend.accounts.models import Peer, Account
-
+from backend.accounts.models import Account, CryptoAddress, Peer
+from backend.coins.models import Coin
 from backend.accounts.tasks import async_update_account_trx
-
-from backend.transactions.fetchers.coinbase import update_coinbase_trx
 
 
 class PeerType(DjangoObjectType):
@@ -35,12 +33,17 @@ class AccountType(DjangoObjectType):
         model = Account
 
 
+class CryptoAddressType(DjangoObjectType):
+    class Meta:
+        model = CryptoAddress
+
+
 class Query(object):
     # Single account by ID or name
     get_account = graphene.Field(
         AccountType,
-        id=graphene.Int(required=False),
-        name=graphene.String(required=False))
+        id=graphene.ID(required=False, description="ID of the peer"),
+        name=graphene.String(required=False, description="Name of the peer"))
 
     def resolve_get_account(self, info, **kwargs):
         account_id = kwargs.get('id')
@@ -59,6 +62,29 @@ class Query(object):
             return Account.objects.none()
         filtered = Account.objects.filter(owner=info.context.user)
         return filtered
+
+    get_crypto_addresses = graphene.List(
+        CryptoAddressType,
+        peer_id=graphene.ID(required=True, description="ID of the peer"),
+        description="Gets all crypto addresses for a peer")
+
+    def resolve_get_crypto_addresses(self, info, **kwargs):
+        """Gets all crypto addresses for a peer"""
+
+        if not info.context.user.is_authenticated:
+            return CryptoAddress.objects.none()
+
+        peer_id = kwargs.get('peer_id')
+
+        try:
+            peer = Peer.objects.get(pk=peer_id)
+        except ObjectDoesNotExist:
+            return CryptoAddress.objects.none()
+
+        if not peer.owner == info.context.user:
+            return CryptoAddress.objects.none()
+
+        return CryptoAddress.objects.filter(peer=peer)
 
     supported_services = graphene.List(SupportedService)
 
@@ -148,6 +174,119 @@ class CreateAccountMutation(graphene.relay.ClientIDMutation):
             api_secret=api_secret)
 
         return CreateAccountMutation(status=200, account=obj)
+
+
+class CreateCryptoAddressMutation(graphene.relay.ClientIDMutation):
+    class Input:
+        account_id = graphene.ID(required=True)
+        address = graphene.String(required=True)
+        coin_id = graphene.ID(required=True)
+        watch = graphene.Boolean()
+
+    status = graphene.Int()
+    formErrors = graphene.String()
+    address = graphene.Field(CryptoAddressType)
+
+    @classmethod
+    def mutate(cls, root, info, input: Input):
+        if not info.context.user.is_authenticated:
+            return CreateAccountMutation(
+                status=403, client_mutation_id=input['client_mutation_id'])
+
+        account_id = input.get("account_id", -1)
+        address = input.get("address", "").strip()
+        coin_id = input.get("coin_id", -1)
+        watch = input.get("watch", False)
+
+        try:
+            account: Account = Account.objects.get(pk=account_id)
+        except ObjectDoesNotExist:
+            return CreateCryptoAddressMutation(
+                status=404,
+                formErrors=json.dumps({
+                    "account_id": ["Please enter valid account id"]
+                }),
+                client_mutation_id=input['client_mutation_id'])
+
+        if not account.owner == info.context.user:
+            return CreateAccountMutation(
+                status=403, client_mutation_id=input['client_mutation_id'])
+
+        try:
+            coin: Coin = Coin.objects.get(pk=coin_id)
+        except ObjectDoesNotExist:
+            return CreateCryptoAddressMutation(
+                status=404,
+                formErrors=json.dumps({
+                    "coin_id": ["Please enter valid coin id"]
+                }),
+                client_mutation_id=input['client_mutation_id'])
+
+        crypto_address = CryptoAddress.objects.create(
+            peer=account, coin=coin, address=address, watch=watch)
+
+        return CreateCryptoAddressMutation(
+            status=200,
+            address=crypto_address,
+            client_mutation_id=input['client_mutation_id'])
+
+
+class EditCryptoAddressMutation(graphene.relay.ClientIDMutation):
+    class Input:
+        id = graphene.ID(required=True)
+        address = graphene.String(required=True)
+        coin_id = graphene.ID(required=True)
+        watch = graphene.Boolean()
+
+    status = graphene.Int()
+    formErrors = graphene.String()
+    address = graphene.Field(CryptoAddressType)
+
+    @classmethod
+    def mutate(cls, root, info, input: Input):
+        if not info.context.user.is_authenticated:
+            return EditCryptoAddressMutation(
+                status=403, client_mutation_id=input['client_mutation_id'])
+
+        object_id = input.get("id", None)
+        address = input.get("address", None)
+        coin_id = input.get("coin_id", None)
+        watch = input.get("watch", False)
+
+        try:
+            crypto_address: CryptoAddress = CryptoAddress.objects.get(
+                pk=object_id)
+        except ObjectDoesNotExist:
+            return EditCryptoAddressMutation(
+                status=404,
+                formErrors=json.dumps({
+                    "id": ["Address ID not found"]
+                }),
+                client_mutation_id=input['client_mutation_id'])
+
+        if not crypto_address.peer.owner.id == info.context.user.id:
+            return EditCryptoAddressMutation(
+                status=403, client_mutation_id=input['client_mutation_id'])
+
+        try:
+            coin: Coin = Coin.objects.get(pk=coin_id)
+        except ObjectDoesNotExist:
+            return EditCryptoAddressMutation(
+                status=404,
+                formErrors=json.dumps({
+                    "coin_id": ["Coin not fund"]
+                }),
+                client_mutation_id=input['client_mutation_id'])
+
+        crypto_address.address = address
+        crypto_address.coin = coin
+        crypto_address.watch = watch
+        crypto_address.save()
+
+        return EditCryptoAddressMutation(
+            status=200,
+            address=crypto_address,
+            client_mutation_id=input['client_mutation_id'])
 
 
 class EditAccountMutation(graphene.relay.ClientIDMutation):

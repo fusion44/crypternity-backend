@@ -11,6 +11,11 @@ class Peer(models.Model):
     """
     id = models.AutoField(primary_key=True)
 
+    owner = models.ForeignKey(
+        to='auth.user',
+        on_delete=models.PROTECT,
+    )
+
     name = models.CharField(max_length=100)
 
     class_type = models.CharField(max_length=50, editable=False)
@@ -30,8 +35,12 @@ class Peer(models.Model):
         return "[{}] {}".format(self.class_type, self.name)
 
 
-class Address(models.Model):
+class CryptoAddress(models.Model):
     """A crypto address to identify value flows"""
+
+    class Meta:
+        ordering = ("id", )
+
     id = models.AutoField(primary_key=True)
 
     # The peers this address belongs to
@@ -43,6 +52,8 @@ class Address(models.Model):
 
     address_str = models.CharField(max_length=300, blank=True)
 
+    watch = models.BooleanField(default=False)
+
     def save(self,
              force_insert=False,
              force_update=False,
@@ -50,8 +61,8 @@ class Address(models.Model):
              update_fields=None):
         """Calculate the address string before save"""
         self.address_str = "{}:{}".format(self.coin.symbol, self.address)
-        super(Address, self).save(force_insert, force_update, using,
-                                  update_fields)
+        super(CryptoAddress, self).save(force_insert, force_update, using,
+                                        update_fields)
 
     def __str__(self):
         return self.address_str
@@ -70,13 +81,10 @@ class Account(Peer):
                       'api'), ('bitfinex', 'Bitfinex',
                                'api'), ('coinbase', 'Coinbase', 'api'),
                      ('cryptopia', 'Cryptopia',
-                      'api'), ('kraken', 'Kraken',
-                               'api'), ('livecoin', 'Livecoin', 'manual'))
-
-    owner = models.ForeignKey(
-        'auth.user',
-        on_delete=models.CASCADE,
-    )
+                      'api'), ('ethereum_wallet', 'Ethereum Wallet',
+                               'public_address_import'),
+                     ('kraken', 'Kraken', 'api'), ('livecoin', 'Livecoin',
+                                                   'manual'))
 
     slug = models.SlugField(max_length=50)
 

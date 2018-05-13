@@ -16,6 +16,10 @@ class Query(backend.coins.schema.Query, backend.user_profile.schema.Query,
 
 class Mutation(graphene.ObjectType):
     create_account = backend.accounts.schema.CreateAccountMutation.Field()
+    create_crypto_address = backend.accounts.schema.CreateCryptoAddressMutation.Field(
+    )
+    edit_crypto_address = backend.accounts.schema.EditCryptoAddressMutation.Field(
+    )
     edit_account = backend.accounts.schema.EditAccountMutation.Field()
     account_refresh_transactions = backend.accounts.schema.AccountRefreshTransactionsMutation.Field(
     )

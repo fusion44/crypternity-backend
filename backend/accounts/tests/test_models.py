@@ -20,7 +20,7 @@ def test_peer_str_func():
 
 def test_address_str_func():
     address = "test123"
-    obj = mixer.blend("accounts.Address", address=address)
+    obj = mixer.blend("accounts.CryptoAddress", address=address)
     symbol = obj.coin.symbol
     assert obj.__str__() == "{}:{}".format(symbol, address)
 
