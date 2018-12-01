@@ -1,4 +1,6 @@
-# Crypternity Backend
+# !Currently unmaintained!
+
+## Crypternity Backend
 
 ### Setup
 
